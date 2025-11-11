@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.0</Version>
+    <Authors>NistParser Contributors</Authors>
+    <Company>NistParser</Company>
+    <Product>NistParser</Product>
+    <Description>A .NET library for parsing ANSI/NIST-ITL biometric data interchange files. Supports Type-1 through Type-99 records including fingerprints, facial images, iris scans, palm prints, and more.</Description>
+    <PackageProjectUrl>https://github.com/farkasaty/NistParser</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/farkasaty/NistParser</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>NIST;ANSI;biometric;fingerprint;facial-recognition;iris;palm-print;parser</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+</Project>
