@@ -1,0 +1,169 @@
+<Window x:Class="NistParser.WPF.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="NIST Parser Viewer" Height="800" Width="1400"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Toolbar -->
+        <Border Grid.Row="0" Background="#F3F3F3" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="OpenFileButton" Content="📂 Open NIST File" Click="OpenFileButton_Click" Width="180"/>
+                <TextBlock x:Name="FilePathText" VerticalAlignment="Center" Margin="15,0,0,0"
+                          Foreground="#666" FontStyle="Italic" Text="No file loaded"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Transaction Summary Panel -->
+        <Border Grid.Row="1" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1"
+                Padding="20" x:Name="SummaryPanel" Visibility="Collapsed">
+            <StackPanel>
+                <TextBlock Text="Transaction Information" Style="{StaticResource HeaderTextBlock}"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Row 0 -->
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Version:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="VersionText" Style="{StaticResource ValueTextBlock}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="2" Text="Date:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="0" Grid.Column="3" x:Name="DateText" Style="{StaticResource ValueTextBlock}"/>
+
+                    <!-- Row 1 -->
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="TCN:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="TcnText" Style="{StaticResource ValueTextBlock}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="2" Text="Transaction Type:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="1" Grid.Column="3" x:Name="TransactionTypeText" Style="{StaticResource ValueTextBlock}"/>
+
+                    <!-- Row 2 -->
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="ORI:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="OriText" Style="{StaticResource ValueTextBlock}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="2" Text="DAI:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="2" Grid.Column="3" x:Name="DaiText" Style="{StaticResource ValueTextBlock}"/>
+
+                    <!-- Row 3 -->
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Total Records:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="RecordCountText" Style="{StaticResource ValueTextBlock}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="2" Text="Resolution:" Style="{StaticResource LabelTextBlock}"/>
+                    <TextBlock Grid.Row="3" Grid.Column="3" x:Name="ResolutionText" Style="{StaticResource ValueTextBlock}"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Records List -->
+            <Border Grid.Column="0" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0" Background="White">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Records" Style="{StaticResource HeaderTextBlock}"
+                              Margin="15,15,15,10"/>
+                    <ListBox x:Name="RecordsListBox" BorderThickness="0"
+                            SelectionChanged="RecordsListBox_SelectionChanged">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Margin="5">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="{Binding Details}" Foreground="#666" FontSize="11" Margin="0,2,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#E0E0E0"/>
+
+            <!-- Record Details Panel -->
+            <Border Grid.Column="2" Background="White" Padding="20">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="DetailsPanel">
+                        <TextBlock Text="Record Details" Style="{StaticResource HeaderTextBlock}"/>
+                        <TextBlock x:Name="NoSelectionText" Text="Select a record from the list to view details"
+                                  Foreground="#999" FontStyle="Italic" Margin="0,20,0,0"/>
+
+                        <!-- Record Header -->
+                        <StackPanel x:Name="RecordHeaderPanel" Visibility="Collapsed">
+                            <Border Background="#F8F8F8" Padding="15" CornerRadius="4" Margin="0,0,0,15">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Record Type:" Style="{StaticResource LabelTextBlock}"/>
+                                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="RecordTypeText" Style="{StaticResource ValueTextBlock}"/>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="IDC:" Style="{StaticResource LabelTextBlock}"/>
+                                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="RecordIdcText" Style="{StaticResource ValueTextBlock}"/>
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Record Length:" Style="{StaticResource LabelTextBlock}"/>
+                                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="RecordLengthText" Style="{StaticResource ValueTextBlock}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- Fields Section -->
+                            <TextBlock Text="Fields" FontSize="16" FontWeight="SemiBold" Margin="0,10,0,10"/>
+                            <ItemsControl x:Name="FieldsItemsControl">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4"
+                                               Padding="12" Margin="0,0,0,8" Background="White">
+                                            <StackPanel>
+                                                <TextBlock Text="{Binding FieldNumber}" FontWeight="SemiBold"
+                                                          Foreground="#0078D4" FontSize="13"/>
+                                                <TextBlock Text="{Binding DisplayValue}" Margin="0,5,0,0"
+                                                          TextWrapping="Wrap" FontFamily="Consolas"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Empty State (when no file loaded) -->
+        <Border Grid.Row="2" x:Name="EmptyStatePanel" Background="#F9F9F9">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="📄" FontSize="80" HorizontalAlignment="Center" Margin="0,0,0,20"/>
+                <TextBlock Text="No NIST File Loaded" FontSize="24" FontWeight="SemiBold"
+                          HorizontalAlignment="Center" Foreground="#333"/>
+                <TextBlock Text="Click 'Open NIST File' to load a file" FontSize="14"
+                          HorizontalAlignment="Center" Foreground="#666" Margin="0,10,0,20"/>
+                <Button Content="📂 Open NIST File" Click="OpenFileButton_Click" Width="200" Height="40"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
