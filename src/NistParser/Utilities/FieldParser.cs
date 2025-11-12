@@ -13,7 +13,7 @@ public static class FieldParser
 {
     /// <summary>
     /// Parses a single tagged field from raw bytes
-    /// Format: "X.YYY:data<separator>"
+    /// Format: "X.YYY:data&lt;separator&gt;"
     /// </summary>
     /// <param name="fieldData">The raw field data (including field number and colon)</param>
     /// <returns>The parsed NistField</returns>

@@ -154,7 +154,7 @@ public class NistTransactionParser
 
     /// <summary>
     /// Parses the Transaction Content field (1.003 / CNT)
-    /// Format: record_count<US>record_type<US>IDC<RS>record_type<US>IDC<RS>...
+    /// Format: record_count&lt;US&gt;record_type&lt;US&gt;IDC&lt;RS&gt;record_type&lt;US&gt;IDC&lt;RS&gt;...
     /// </summary>
     /// <param name="cntField">The CNT field</param>
     /// <returns>Parsed transaction content</returns>
