@@ -291,21 +291,44 @@ public class NistTransactionParser
     private static NistRecord ParseMixedRecord(byte[] fileData, ref int position, RecordType recordType)
     {
         NistRecord record = CreateRecord(recordType);
-
-        // Mixed records have tagged fields followed by field 999 with binary data
-        // We need to parse tagged fields until we find field 999
-
         int startPosition = position;
 
-        // Find all GS separators to parse tagged fields
-        List<byte[]> fields = new List<byte[]>();
+        // First, we need to determine the total record length
+        // Parse the first field (X.001) to get the record length
+        int tempPos = position;
+        int firstFieldEnd = Array.IndexOf(fileData, SeparatorConstants.GS, tempPos);
+        if (firstFieldEnd == -1)
+        {
+            throw new NistParserException($"Type-{(int)recordType} mixed record is malformed");
+        }
+
+        byte[] firstFieldData = new byte[firstFieldEnd - tempPos];
+        Array.Copy(fileData, tempPos, firstFieldData, 0, firstFieldData.Length);
+
+        var lengthField = FieldParser.ParseTaggedField(firstFieldData);
+        int recordLength = 0;
+        if (int.TryParse(lengthField.FirstValue, out int len))
+        {
+            recordLength = len;
+        }
+
+        if (recordLength <= 0 || position + recordLength > fileData.Length)
+        {
+            throw new NistParserException(
+                $"Type-{(int)recordType} has invalid record length: {recordLength}");
+        }
+
+        // Now we know the exact boundaries of this record
+        int recordEndPosition = startPosition + recordLength;
+
+        // Parse tagged fields until we hit field 999 or run out of tagged fields
         int currentPos = position;
         int fieldStart = position;
+        bool foundField999 = false;
 
-        while (currentPos < fileData.Length)
+        while (currentPos < recordEndPosition)
         {
-            if (fileData[currentPos] == SeparatorConstants.GS ||
-                fileData[currentPos] == SeparatorConstants.FS)
+            if (fileData[currentPos] == SeparatorConstants.GS)
             {
                 // Extract field
                 int fieldLength = currentPos - fieldStart;
@@ -313,33 +336,43 @@ public class NistTransactionParser
                 {
                     byte[] fieldData = new byte[fieldLength];
                     Array.Copy(fileData, fieldStart, fieldData, 0, fieldLength);
-                    fields.Add(fieldData);
 
                     // Check if this is field 999 (image data field)
                     string? fieldNumber = FieldParser.ExtractFieldNumber(fieldData);
                     if (fieldNumber != null && fieldNumber.EndsWith(".999"))
                     {
-                        // Field 999 found - parse it as binary
-                        var field = ParseField999(fieldData);
-                        record.AddField(field);
+                        // Field 999 marks the start of binary data
+                        // The rest of the record (until recordEndPosition) is binary image data
+                        foundField999 = true;
+                        int binaryDataStart = currentPos + 1; // After the GS
+                        int binaryDataLength = recordEndPosition - binaryDataStart;
 
-                        // Move to next separator and exit
-                        currentPos++;
-                        if (fileData[currentPos - 1] == SeparatorConstants.FS)
+                        if (binaryDataLength > 0)
                         {
-                            position = currentPos;
-                            return record;
-                        }
-                        fieldStart = currentPos;
-                        continue;
-                    }
-                }
+                            byte[] binaryData = new byte[binaryDataLength];
+                            Array.Copy(fileData, binaryDataStart, binaryData, 0, binaryDataLength);
 
-                // Check if we hit FS (end of record)
-                if (fileData[currentPos] == SeparatorConstants.FS)
-                {
-                    position = currentPos + 1;
-                    break;
+                            var field = new NistField(fieldNumber)
+                            {
+                                BinaryData = binaryData
+                            };
+                            record.AddField(field);
+                        }
+                        break;
+                    }
+                    else if (fieldNumber != null)
+                    {
+                        // Regular tagged field
+                        try
+                        {
+                            var field = FieldParser.ParseTaggedField(fieldData);
+                            record.AddField(field);
+                        }
+                        catch (InvalidFieldFormatException)
+                        {
+                            // Skip malformed fields
+                        }
+                    }
                 }
 
                 fieldStart = currentPos + 1;
@@ -348,24 +381,10 @@ public class NistTransactionParser
             currentPos++;
         }
 
-        // Parse all non-999 tagged fields
-        foreach (var fieldData in fields)
+        // Extract record length and IDC from parsed fields
+        if (int.TryParse(record.GetFieldValue($"{(int)recordType}.001"), out int finalLength))
         {
-            if (fieldData.Length == 0)
-                continue;
-
-            string? fieldNumber = FieldParser.ExtractFieldNumber(fieldData);
-            if (fieldNumber != null && !fieldNumber.EndsWith(".999"))
-            {
-                var field = FieldParser.ParseTaggedField(fieldData);
-                record.AddField(field);
-            }
-        }
-
-        // Extract record length and IDC
-        if (int.TryParse(record.GetFieldValue($"{(int)recordType}.001"), out int recordLength))
-        {
-            record.RecordLength = recordLength;
+            record.RecordLength = finalLength;
         }
 
         string? idc = record.GetFieldValue($"{(int)recordType}.002");
@@ -373,6 +392,9 @@ public class NistTransactionParser
         {
             record.IDC = idc;
         }
+
+        // Move position to end of record
+        position = recordEndPosition;
 
         return record;
     }
@@ -404,18 +426,50 @@ public class NistTransactionParser
     }
 
     /// <summary>
+    /// Reads a 32-bit integer in big-endian format (as per ANSI/NIST standard)
+    /// </summary>
+    /// <param name="data">Byte array containing the data</param>
+    /// <param name="offset">Starting offset</param>
+    /// <returns>The integer value</returns>
+    private static int ReadInt32BigEndian(byte[] data, int offset)
+    {
+        // ANSI/NIST standard specifies big-endian byte order for binary records
+        // BitConverter uses system endianness (little-endian on Windows)
+        // So we need to handle byte order explicitly
+        if (BitConverter.IsLittleEndian)
+        {
+            // Reverse bytes for little-endian systems (Windows, most x86/x64)
+            return (data[offset] << 24) | (data[offset + 1] << 16) |
+                   (data[offset + 2] << 8) | data[offset + 3];
+        }
+        else
+        {
+            // Big-endian system - use bytes as-is
+            return BitConverter.ToInt32(data, offset);
+        }
+    }
+
+    /// <summary>
     /// Parses a pure binary record (Type-3 through Type-8)
     /// </summary>
     private static NistRecord ParseBinaryRecord(byte[] fileData, ref int position, RecordType recordType)
     {
         // Binary records have fixed-length fields
-        // First 4 bytes are the record length (binary)
+        // First 4 bytes are the record length (binary, big-endian as per ANSI/NIST standard)
         if (position + 4 > fileData.Length)
         {
             throw new TruncatedFileException($"Not enough data for Type-{(int)recordType} record length");
         }
 
-        int recordLength = BitConverter.ToInt32(fileData, position);
+        // Read record length in big-endian format
+        int recordLength = ReadInt32BigEndian(fileData, position);
+
+        if (recordLength <= 0 || recordLength > fileData.Length)
+        {
+            throw new NistParserException(
+                $"Invalid Type-{(int)recordType} record length: {recordLength}");
+        }
+
         if (position + recordLength > fileData.Length)
         {
             throw new TruncatedFileException(
