@@ -67,7 +67,52 @@ An ANSI/NIST-ITL file is called a **Transaction** and consists of:
 ### 3.2 XML Encoding (NIEM-Conformant)
 - Introduced in 2008
 - XML structure for the same data
-- Not covered in detail in this specification (focus on Traditional Encoding)
+- Uses NIEM (National Information Exchange Model) namespaces
+- Base64 encoding for binary image data
+- Human-readable format
+- **Fully supported by this implementation**
+
+#### 3.2.1 NIEM XML Structure
+NIEM-Conformant XML files use structured namespaces:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<itl:NISTBiometricInformationExchangePackage
+    xmlns:itl="http://biometrics.nist.gov/standard/2011"
+    xmlns:biom="http://release.niem.gov/niem/domains/biometrics/4.0/"
+    xmlns:nc="http://release.niem.gov/niem/niem-core/4.0/"
+    xmlns:s="http://release.niem.gov/niem/structures/4.0/">
+    <!-- Transaction content -->
+</itl:NISTBiometricInformationExchangePackage>
+```
+
+**Key Namespaces:**
+- `itl`: NIST ITL-specific elements
+- `biom`: Biometric domain elements
+- `nc`: NIEM core elements (identifiers, dates, etc.)
+- `s`: NIEM structural elements
+
+#### 3.2.2 XML vs Traditional Format Mapping
+Both formats represent the same logical data:
+
+| Concept | Traditional Format | XML Format |
+|---------|-------------------|------------|
+| **Field Separator** | GS (0x1D) character | XML element boundaries |
+| **Subfield Separator** | RS (0x1E) character | Nested XML elements |
+| **Item Separator** | US (0x1F) character | Multiple elements or space-delimited |
+| **Record Separator** | FS (0x1C) character | XML element boundaries |
+| **Version (1.002)** | `1.002:0502<GS>` | `<biom:TransactionMajorVersionValue>05</biom:TransactionMajorVersionValue>` |
+| **TCN (1.009)** | `1.009:ABC123<GS>` | `<biom:TransactionControlIdentification><nc:IdentificationID>ABC123</nc:IdentificationID></biom:TransactionControlIdentification>` |
+| **Image Data** | Binary bytes in field 999 | Base64-encoded text |
+
+#### 3.2.3 Automatic Format Detection
+The parser automatically detects which format is being used:
+- Checks for XML declaration (`<?xml`)
+- Checks for NIEM root element (`<itl:NISTBiometricInformationExchangePackage`)
+- Routes to appropriate parser (Traditional or XML)
+- Returns unified `NistTransaction` object regardless of format
+
+See [NIEM_XML_IMPLEMENTATION.md](./NIEM_XML_IMPLEMENTATION.md) for detailed XML implementation guide.
 
 ---
 
@@ -218,6 +263,35 @@ Field 1.003:1<US>0<RS>2<US>5<GS>
        Item 1: "2"            │
        Item 2: "5" ───────────┘
 ```
+
+### 6.5 Human-Readable Field Descriptions
+
+This implementation provides human-readable descriptions for 80+ common fields:
+
+**Description System:**
+- **Mnemonic**: Short code (e.g., "VER", "TCN", "FGP")
+- **Long Description**: Full field name (e.g., "Version Number", "Transaction Control Number")
+- **Value Interpretation**: Human-readable value meaning
+
+**Example:**
+```
+Field Number: 14.005
+Raw Value: "1"
+Description: "FGP - Finger Position"
+Mnemonic: "FGP"
+Long Description: "Finger Position"
+Value Interpretation: "Right thumb (1)"
+```
+
+**Supported Interpretations:**
+- Version numbers (0502 → "Version 05.02")
+- Transaction types (CRM → "Criminal (CRM)")
+- Impression types (0 → "Live-scan plain (0)")
+- Finger positions (1-13 with names)
+- Compression algorithms (WSQ → "WSQ - Wavelet Scalar Quantization")
+- Scale units (1 → "Pixels per inch (1)")
+- Dates (20250717 → "2025-07-17")
+- Priority levels (1-9 with descriptions)
 
 ---
 
@@ -740,6 +814,7 @@ Record.Field:Data<Separator>
 | Date | Version | Notes |
 |------|---------|-------|
 | 2025-11-11 | 1.0 | Initial comprehensive technical specification |
+| 2025-11-13 | 1.1 | Added NIEM XML encoding details, automatic format detection, field description system |
 
 ---
 

@@ -9,12 +9,16 @@ NistParser is a comprehensive library for reading and parsing ANSI/NIST-ITL (Ame
 ## Features
 
 - ✅ **Full ANSI/NIST-ITL 1-2011 Support**: Parses all record types (Type-1 through Type-99)
+- ✅ **Dual Format Support**: Traditional binary encoding AND NIEM Conformant XML
+- ✅ **Automatic Format Detection**: Seamlessly handles both formats transparently
+- ✅ **Human-Readable Field Descriptions**: 80+ field descriptions with value interpretation
 - ✅ **Multiple Encoding Types**: Handles ASCII tagged-field, binary, and mixed records
 - ✅ **Hierarchical Data Structure**: Properly parses fields, subfields, and information items
 - ✅ **Type-Safe**: Strong typing for all data structures
 - ✅ **Well-Documented**: Comprehensive XML documentation for IntelliSense
 - ✅ **Extensible**: Easy to add support for custom record types
-- ✅ **Performance**: Efficient binary parsing with minimal allocations
+- ✅ **Performance**: Efficient parsing with minimal allocations
+- ✅ **WPF Viewer Application**: Visual tool for inspecting NIST files
 
 ## Supported Record Types
 
@@ -56,8 +60,10 @@ dotnet build src/NistParser/NistParser.csproj
 using NistParser;
 using NistParser.Core;
 
-// Parse a NIST file
+// Parse a NIST file (automatically detects Traditional or XML format)
 var transaction = NistTransactionParser.ParseFile("path/to/file.nist");
+// or
+var transaction = NistTransactionParser.ParseFile("path/to/file.xml");
 
 // Access transaction metadata
 Console.WriteLine($"Version: {transaction.Version}");
@@ -69,6 +75,20 @@ Console.WriteLine($"Records: {transaction.TotalRecordCount}");
 var header = transaction.Header;
 Console.WriteLine($"Date: {header.Date}");
 Console.WriteLine($"Transaction Type: {header.TypeOfTransaction}");
+```
+
+### Format Support
+
+NistParser automatically detects and handles both formats:
+
+```csharp
+// Both formats produce the same NistTransaction object
+var traditionalFile = NistTransactionParser.ParseFile("file.an2");  // Traditional binary
+var xmlFile = NistTransactionParser.ParseFile("file.xml");          // NIEM XML
+
+// Same API for both!
+Console.WriteLine(traditionalFile.Version);
+Console.WriteLine(xmlFile.Version);
 ```
 
 ### Working with Biographic Data (Type-2)
@@ -134,22 +154,25 @@ if (fingerprint != null)
 }
 ```
 
-### Accessing Fields Directly
+### Accessing Fields with Human-Readable Descriptions
 
 ```csharp
 using NistParser.Core;
+using NistParser.Constants;
 
-// Access any field from any record
+// Access any field from any record with descriptions
 foreach (var record in transaction.Records)
 {
     // Get a specific field
-    NistField? field = record.GetField("14.009"); // Scanning resolution
+    NistField? field = record.GetField("14.005"); // Finger position
     if (field != null)
     {
-        Console.WriteLine($"Field {field.FieldNumber}: {field.FirstValue}");
+        Console.WriteLine($"Field: {field.Description}");           // "FGP - Finger Position"
+        Console.WriteLine($"Raw Value: {field.FirstValue}");        // "1"
+        Console.WriteLine($"Interpreted: {field.ValueInterpretation}"); // "Right thumb (1)"
     }
 
-    // Iterate through all fields
+    // Iterate through all fields with descriptions
     foreach (var kvp in record.Fields)
     {
         string fieldNumber = kvp.Key;
@@ -157,14 +180,30 @@ foreach (var record in transaction.Records)
 
         if (field.IsBinary)
         {
-            Console.WriteLine($"{fieldNumber}: [Binary data, {field.BinaryData?.Length} bytes]");
+            Console.WriteLine($"{field.Description}: [Binary data, {field.BinaryData?.Length} bytes]");
         }
         else
         {
-            Console.WriteLine($"{fieldNumber}: {field.FirstValue}");
+            Console.WriteLine($"{field.Description}: {field.FirstValue}");
+
+            // Show interpretation if available
+            if (field.ValueInterpretation != field.FirstValue)
+            {
+                Console.WriteLine($"  → {field.ValueInterpretation}");
+            }
         }
     }
 }
+```
+
+**Example Output:**
+```
+FGP - Finger Position: 1
+  → Right thumb (1)
+CA - Compression Algorithm: WSQ
+  → WSQ - Wavelet Scalar Quantization
+TOT - Type of Transaction: CRM
+  → Criminal (CRM)
 ```
 
 ### Parsing from Byte Array
@@ -253,24 +292,26 @@ foreach (var record in genericRecords)
 ```
 NistParser/
 ├── Core/
-│   ├── NistTransaction.cs     - Main transaction container
-│   ├── NistRecord.cs           - Base class for all records
-│   └── NistField.cs            - Field, subfield, and item structures
+│   ├── NistTransaction.cs      - Main transaction container
+│   ├── NistRecord.cs            - Base class for all records
+│   └── NistField.cs             - Field with descriptions & interpretation
 ├── Constants/
-│   ├── SeparatorConstants.cs  - ASCII separator definitions
-│   ├── RecordType.cs           - Record type enumeration
-│   ├── CompressionAlgorithm.cs - Image compression types
-│   └── RecordEncoding.cs       - Encoding type definitions
+│   ├── SeparatorConstants.cs   - ASCII separator definitions
+│   ├── RecordType.cs            - Record type enumeration
+│   ├── CompressionAlgorithm.cs  - Image compression types
+│   ├── RecordEncoding.cs        - Encoding type definitions
+│   └── FieldDescriptions.cs     - Field descriptions (80+ fields)
 ├── Records/
-│   ├── Type1Record.cs          - Transaction header
-│   ├── Type2Record.cs          - Biographic data
-│   ├── Type14Record.cs         - Fingerprint images
-│   └── GenericNistRecord.cs    - Generic record handler
+│   ├── Type1Record.cs           - Transaction header
+│   ├── Type2Record.cs           - Biographic data
+│   ├── Type14Record.cs          - Fingerprint images
+│   └── GenericNistRecord.cs     - Generic record handler
 ├── Utilities/
-│   └── FieldParser.cs          - Field parsing utilities
+│   └── FieldParser.cs           - Field parsing utilities
 ├── Exceptions/
-│   └── NistParserException.cs  - Custom exceptions
-└── NistTransactionParser.cs    - Main parser class
+│   └── NistParserException.cs   - Custom exceptions
+├── NistTransactionParser.cs     - Main parser (Traditional format)
+└── XmlNistTransactionParser.cs  - XML parser (NIEM format)
 ```
 
 ## Data Model
@@ -307,11 +348,20 @@ The ANSI/NIST-ITL standard uses four ASCII control characters:
 - **GS (0x1D)**: Group Separator - Separates fields
 - **FS (0x1C)**: File Separator - Separates records
 
-### Encoding Types
+### Encoding Types & Formats
 
+**Traditional Binary Encoding:**
 - **Tagged ASCII**: Fields identified as "X.YYY:data" (Type-1, Type-2, Type-9, etc.)
 - **Binary**: Fixed-length binary fields (Type-3 through Type-8)
 - **Mixed**: Tagged fields + binary field 999 for image data (Type-10, Type-14, etc.)
+
+**NIEM Conformant XML Encoding:**
+- XML structure with semantic element names
+- NIEM namespaces (`itl`, `biom`, `nc`)
+- Base64-encoded image data
+- Human-readable format
+
+Both formats produce identical `NistTransaction` objects!
 
 ## Consuming the Library
 
@@ -352,6 +402,8 @@ public class BiometricController : ControllerBase
 
 ### From WPF Application
 
+A complete WPF viewer application is included in the repository!
+
 ```csharp
 using System.Windows;
 using NistParser;
@@ -363,16 +415,18 @@ public partial class MainWindow : Window
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
         {
-            Filter = "NIST Files (*.nist)|*.nist|All Files (*.*)|*.*"
+            // Supports both Traditional and XML formats
+            Filter = "NIST Files (*.nist;*.an2;*.xml)|*.nist;*.an2;*.xml|All Files (*.*)|*.*"
         };
 
         if (dialog.ShowDialog() == true)
         {
             try
             {
+                // Automatically handles both formats
                 var transaction = NistTransactionParser.ParseFile(dialog.FileName);
 
-                // Display transaction info
+                // Display transaction info with interpreted values
                 VersionTextBlock.Text = transaction.Version;
                 TcnTextBlock.Text = transaction.TransactionControlNumber;
 
@@ -389,6 +443,11 @@ public partial class MainWindow : Window
 }
 ```
 
+**Run the included WPF Viewer:**
+```bash
+dotnet run --project src/NistParser.WPF/NistParser.WPF.csproj
+```
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
@@ -402,6 +461,7 @@ This project is licensed under the MIT License.
 - [ANSI/NIST-ITL 1-2011 Standard](https://www.nist.gov/itl/iad/image-group/ansinist-itl-standard)
 - [NIST Special Publication 500-290](https://www.nist.gov/publications/data-format-interchange-fingerprint-facial-other-biometric-information-ansinist-itl-1-1)
 - [Technical Specification](./TECHNICAL_SPECIFICATION.md)
+- [NIEM XML Implementation Guide](./NIEM_XML_IMPLEMENTATION.md)
 - [Implementation Summary](./IMPLEMENTATION_SUMMARY.md)
 
 ## Support
