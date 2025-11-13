@@ -27,7 +27,7 @@ public partial class MainWindow : Window
         var openFileDialog = new OpenFileDialog
         {
             Title = "Open NIST File",
-            Filter = "NIST Files (*.nist;*.an2)|*.nist;*.an2|All Files (*.*)|*.*",
+            Filter = "NIST Files (*.nist;*.an2;*.xml)|*.nist;*.an2;*.xml|Traditional Format (*.nist;*.an2)|*.nist;*.an2|XML Format (*.xml)|*.xml|All Files (*.*)|*.*",
             CheckFileExists = true
         };
 
@@ -204,10 +204,17 @@ public partial class MainWindow : Window
                 }
             }
 
+            // Get interpreted value if available
+            string interpretedValue = field.ValueInterpretation;
+            bool hasInterpretation = !string.IsNullOrEmpty(interpretedValue) &&
+                                      interpretedValue != field.FirstValue;
+
             fieldViewModels.Add(new FieldViewModel
             {
                 FieldNumber = field.FieldNumber,
-                DisplayValue = displayValue
+                FieldDescription = field.Description,
+                DisplayValue = displayValue,
+                InterpretedValue = hasInterpretation ? interpretedValue : null
             });
         }
 
@@ -249,5 +256,15 @@ public class RecordViewModel
 public class FieldViewModel
 {
     public string FieldNumber { get; set; } = string.Empty;
+    public string FieldDescription { get; set; } = string.Empty;
     public string DisplayValue { get; set; } = string.Empty;
+    public string? InterpretedValue { get; set; }
+
+    /// <summary>
+    /// Gets the display text for the field header (number + description)
+    /// </summary>
+    public string FieldHeader =>
+        string.IsNullOrEmpty(FieldDescription) || FieldDescription == FieldNumber
+            ? FieldNumber
+            : FieldDescription;
 }

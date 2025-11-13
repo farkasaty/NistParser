@@ -139,10 +139,32 @@
                                         <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4"
                                                Padding="12" Margin="0,0,0,8" Background="White">
                                             <StackPanel>
-                                                <TextBlock Text="{Binding FieldNumber}" FontWeight="SemiBold"
+                                                <!-- Field header with description -->
+                                                <TextBlock Text="{Binding FieldHeader}" FontWeight="SemiBold"
                                                           Foreground="#0078D4" FontSize="13"/>
+
+                                                <!-- Raw value -->
                                                 <TextBlock Text="{Binding DisplayValue}" Margin="0,5,0,0"
                                                           TextWrapping="Wrap" FontFamily="Consolas"/>
+
+                                                <!-- Interpreted value (if different from raw) -->
+                                                <TextBlock Margin="0,5,0,0" TextWrapping="Wrap" FontStyle="Italic" Foreground="#0A7A0A">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Visibility" Value="Visible"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding InterpretedValue}" Value="{x:Null}">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding InterpretedValue}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                    <Run Text="→ "/>
+                                                    <Run Text="{Binding InterpretedValue}"/>
+                                                </TextBlock>
                                             </StackPanel>
                                         </Border>
                                     </DataTemplate>
