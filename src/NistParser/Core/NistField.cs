@@ -1,3 +1,5 @@
+using NistParser.Constants;
+
 namespace NistParser.Core;
 
 /// <summary>
@@ -46,6 +48,28 @@ public class NistField
     /// Gets the first information item from the first subfield, or null if none exist
     /// </summary>
     public string? FirstValue => FirstSubfield?.FirstItem;
+
+    /// <summary>
+    /// Gets a human-readable description of this field (e.g., "VER - Version Number")
+    /// </summary>
+    public string Description => FieldDescriptions.GetDescription(FieldNumber);
+
+    /// <summary>
+    /// Gets the short mnemonic for this field (e.g., "VER" for field 1.002)
+    /// </summary>
+    public string Mnemonic => FieldDescriptions.GetMnemonic(FieldNumber);
+
+    /// <summary>
+    /// Gets the long description for this field (e.g., "Version Number" for field 1.002)
+    /// </summary>
+    public string LongDescription => FieldDescriptions.GetLongDescription(FieldNumber);
+
+    /// <summary>
+    /// Gets a human-readable interpretation of the first value
+    /// </summary>
+    public string ValueInterpretation => FirstValue != null
+        ? FieldDescriptions.GetValueInterpretation(FieldNumber, FirstValue)
+        : string.Empty;
 
     /// <summary>
     /// Initializes a new instance of the NistField class

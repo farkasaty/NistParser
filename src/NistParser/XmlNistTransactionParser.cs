@@ -144,12 +144,9 @@ public static class XmlNistTransactionParser
     {
         var record = new Type1Record();
 
-        // Parse record category code (should be "1")
-        XElement? categoryCode = element.Element(biom + "RecordCategoryCode");
-        if (categoryCode != null)
-        {
-            AddField(record, "1.001", categoryCode.Value);
-        }
+        // Note: RecordCategoryCode is just a type indicator, not field 1.001
+        // Field 1.001 (LEN) is the record length, which is calculated in traditional format
+        // In XML format, we skip it as record boundaries are defined by XML structure
 
         XElement? transaction = element.Element(biom + "Transaction");
         if (transaction != null)
@@ -357,12 +354,9 @@ public static class XmlNistTransactionParser
     {
         var record = new Type2Record();
 
-        // Field 2.001 - Record category code
-        XElement? categoryCode = element.Element(biom + "RecordCategoryCode");
-        if (categoryCode != null)
-        {
-            AddField(record, "2.001", categoryCode.Value);
-        }
+        // Note: RecordCategoryCode is just a type indicator, NOT field 2.001
+        // Field 2.001 (LEN) would be the record length in traditional format
+        // We skip it in XML format as boundaries are defined by XML structure
 
         // Field 2.002 - IDC
         string? idc = GetImageReferenceId(element);
@@ -385,12 +379,9 @@ public static class XmlNistTransactionParser
     {
         var record = new Type14Record();
 
-        // Field 14.001 - Record category code
-        XElement? categoryCode = element.Element(biom + "RecordCategoryCode");
-        if (categoryCode != null)
-        {
-            AddField(record, "14.001", categoryCode.Value);
-        }
+        // Note: RecordCategoryCode is just a type indicator, NOT field 14.001
+        // Field 14.001 (LEN) would be the record length in traditional format
+        // We skip it in XML format as boundaries are defined by XML structure
 
         // Field 14.002 - IDC
         string? idc = GetImageReferenceId(element);
@@ -462,12 +453,9 @@ public static class XmlNistTransactionParser
         var record = new GenericNistRecord(recordType);
         int typeNum = (int)recordType;
 
-        // Field X.001 - Record category code
-        XElement? categoryCode = element.Element(biom + "RecordCategoryCode");
-        if (categoryCode != null)
-        {
-            AddField(record, $"{typeNum}.001", categoryCode.Value);
-        }
+        // Note: RecordCategoryCode is just a type indicator, NOT field X.001
+        // Field X.001 (LEN) would be the record length in traditional format
+        // We skip it in XML format as boundaries are defined by XML structure
 
         // Field X.002 - IDC
         string? idc = GetImageReferenceId(element);
