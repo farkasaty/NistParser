@@ -113,6 +113,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
@@ -128,6 +129,12 @@
 
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Record Length:" Style="{StaticResource LabelTextBlock}"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1" x:Name="RecordLengthText" Style="{StaticResource ValueTextBlock}"/>
+
+                                    <!-- Edit Button -->
+                                    <Button Grid.Row="0" Grid.Column="2" x:Name="EditRecordButton"
+                                           Content="✏️ Edit Record" Width="130" Height="30"
+                                           Click="EditRecordButton_Click"
+                                           VerticalAlignment="Top"/>
                                 </Grid>
                             </Border>
 

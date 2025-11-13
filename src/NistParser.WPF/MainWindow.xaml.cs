@@ -6,6 +6,8 @@ using NistParser.Core;
 using NistParser.Records;
 using NistParser.Exceptions;
 using NistParser.Constants;
+using NistParser.Editing;
+using NistParser.WPF.Windows;
 
 namespace NistParser.WPF;
 
@@ -15,6 +17,9 @@ namespace NistParser.WPF;
 public partial class MainWindow : Window
 {
     private NistTransaction? _currentTransaction;
+    private NistTransactionEditor? _transactionEditor;
+    private string? _currentFilePath;
+    private NistRecord? _currentlyViewedRecord;
 
     public MainWindow()
     {
@@ -44,8 +49,10 @@ public partial class MainWindow : Window
             // Show loading indicator
             Mouse.OverrideCursor = System.Windows.Input.Cursors.Wait;
 
-            // Parse the NIST file
-            _currentTransaction = NistTransactionParser.ParseFile(filePath);
+            // Parse the NIST file and create editor
+            _currentFilePath = filePath;
+            _transactionEditor = NistTransactionEditor.FromFile(filePath);
+            _currentTransaction = _transactionEditor.Transaction;
 
             // Update UI
             FilePathText.Text = filePath;
@@ -144,6 +151,9 @@ public partial class MainWindow : Window
 
     private void DisplayRecordDetails(NistRecord record)
     {
+        // Track currently viewed record
+        _currentlyViewedRecord = record;
+
         // Show record header panel
         NoSelectionText.Visibility = Visibility.Collapsed;
         RecordHeaderPanel.Visibility = Visibility.Visible;
@@ -152,6 +162,12 @@ public partial class MainWindow : Window
         RecordTypeText.Text = $"Type-{(int)record.RecordType} ({GetRecordTypeName(record)})";
         RecordIdcText.Text = record.IDC;
         RecordLengthText.Text = $"{record.RecordLength} bytes";
+
+        // Show/hide edit button based on record type (only Type-1 and Type-2 are editable)
+        EditRecordButton.Visibility = (record.RecordType == RecordType.Type1_TransactionInformation ||
+                                       record.RecordType == RecordType.Type2_UserDefinedText)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
         // Display fields
         var fieldViewModels = new List<FieldViewModel>();
@@ -237,6 +253,59 @@ public partial class MainWindow : Window
     private void ShowError(string title, string message)
     {
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private void EditRecordButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentlyViewedRecord == null || _transactionEditor == null)
+        {
+            ShowError("Error", "No record selected for editing");
+            return;
+        }
+
+        // Only allow editing Type-1 and Type-2 records
+        if (_currentlyViewedRecord.RecordType != RecordType.Type1_TransactionInformation &&
+            _currentlyViewedRecord.RecordType != RecordType.Type2_UserDefinedText)
+        {
+            ShowError("Not Editable", "Only Type-1 and Type-2 records can be edited.");
+            return;
+        }
+
+        // Open edit window
+        var editWindow = new RecordEditWindow(_currentlyViewedRecord, _transactionEditor);
+        editWindow.Owner = this;
+
+        if (editWindow.ShowDialog() == true)
+        {
+            // Changes were saved, now save the transaction back to file
+            try
+            {
+                Mouse.OverrideCursor = Cursors.Wait;
+
+                // Save to file (overwrite original)
+                if (!string.IsNullOrEmpty(_currentFilePath))
+                {
+                    _transactionEditor.SaveToFile(_currentFilePath);
+                    MessageBox.Show("File saved successfully!", "Success",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    // Reload the file to refresh the display
+                    LoadNistFile(_currentFilePath);
+                }
+                else
+                {
+                    ShowError("Error", "Current file path is not available");
+                }
+            }
+            catch (Exception ex)
+            {
+                ShowError("Save Error", $"Failed to save file:\n\n{ex.Message}");
+            }
+            finally
+            {
+                Mouse.OverrideCursor = null;
+            }
+        }
     }
 }
 
