@@ -66,6 +66,34 @@ public abstract class NistRecord
     }
 
     /// <summary>
+    /// Updates a field value (or adds it if it doesn't exist)
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "1.002")</param>
+    /// <param name="value">The new value</param>
+    public void UpdateField(string fieldNumber, string value)
+    {
+        var field = GetField(fieldNumber);
+        if (field == null)
+        {
+            // Create new field
+            field = new NistField(fieldNumber);
+            AddField(field);
+        }
+
+        field.SetValue(value);
+    }
+
+    /// <summary>
+    /// Removes a field from this record
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "1.003")</param>
+    /// <returns>True if the field was removed, false if it didn't exist</returns>
+    public bool RemoveField(string fieldNumber)
+    {
+        return Fields.Remove(fieldNumber);
+    }
+
+    /// <summary>
     /// Checks if a field exists in this record
     /// </summary>
     /// <param name="fieldNumber">Field number (e.g., "1.003")</param>

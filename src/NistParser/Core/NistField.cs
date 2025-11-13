@@ -114,6 +114,46 @@ public class NistField
     }
 
     /// <summary>
+    /// Sets the field value (creates a single subfield with single item)
+    /// </summary>
+    /// <param name="value">The value to set</param>
+    public void SetValue(string value)
+    {
+        Subfields.Clear();
+        Subfields.Add(new NistSubfield(value));
+    }
+
+    /// <summary>
+    /// Sets the value of a specific subfield
+    /// </summary>
+    /// <param name="subfieldIndex">Index of the subfield (0-based)</param>
+    /// <param name="value">The value to set</param>
+    public void SetSubfieldValue(int subfieldIndex, string value)
+    {
+        // Ensure we have enough subfields
+        while (Subfields.Count <= subfieldIndex)
+        {
+            Subfields.Add(new NistSubfield());
+        }
+
+        Subfields[subfieldIndex].Items.Clear();
+        Subfields[subfieldIndex].Items.Add(value);
+    }
+
+    /// <summary>
+    /// Sets multiple values as separate subfields
+    /// </summary>
+    /// <param name="values">The values to set</param>
+    public void SetValues(params string[] values)
+    {
+        Subfields.Clear();
+        foreach (var value in values)
+        {
+            Subfields.Add(new NistSubfield(value));
+        }
+    }
+
+    /// <summary>
     /// Returns a string representation of this field
     /// </summary>
     public override string ToString()
