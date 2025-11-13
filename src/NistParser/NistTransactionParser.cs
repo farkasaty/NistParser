@@ -10,11 +10,13 @@ namespace NistParser;
 /// <summary>
 /// Main parser for ANSI/NIST-ITL transaction files.
 /// Parses biometric data interchange files into structured NistTransaction objects.
+/// Supports both Traditional binary encoding and NIEM Conformant XML encoding.
 /// </summary>
 public class NistTransactionParser
 {
     /// <summary>
-    /// Parses an ANSI/NIST-ITL file from a byte array
+    /// Parses an ANSI/NIST-ITL file from a byte array.
+    /// Automatically detects format (Traditional binary vs NIEM XML).
     /// </summary>
     /// <param name="fileData">The raw file data</param>
     /// <returns>The parsed transaction</returns>
@@ -27,6 +29,43 @@ public class NistTransactionParser
             throw new NistParserException("File data is null or empty");
         }
 
+        // Detect file format and route to appropriate parser
+        if (IsXmlFormat(fileData))
+        {
+            return XmlNistTransactionParser.Parse(fileData);
+        }
+        else
+        {
+            return ParseTraditionalFormat(fileData);
+        }
+    }
+
+    /// <summary>
+    /// Determines if the file data is in NIEM XML format
+    /// </summary>
+    /// <param name="fileData">The file data to check</param>
+    /// <returns>True if XML format, false if traditional binary format</returns>
+    private static bool IsXmlFormat(byte[] fileData)
+    {
+        if (fileData.Length < 5)
+            return false;
+
+        // Check for XML declaration or root element
+        // Sample up to first 200 bytes to detect format
+        int sampleLength = Math.Min(200, fileData.Length);
+        string header = Encoding.UTF8.GetString(fileData, 0, sampleLength).TrimStart();
+
+        return header.StartsWith("<?xml", StringComparison.OrdinalIgnoreCase) ||
+               header.Contains("<itl:NISTBiometricInformationExchangePackage");
+    }
+
+    /// <summary>
+    /// Parses an ANSI/NIST-ITL file in Traditional binary encoding
+    /// </summary>
+    /// <param name="fileData">The raw file data</param>
+    /// <returns>The parsed transaction</returns>
+    private static NistTransaction ParseTraditionalFormat(byte[] fileData)
+    {
         var transaction = new NistTransaction
         {
             RawData = fileData

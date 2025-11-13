@@ -27,7 +27,7 @@ public partial class MainWindow : Window
         var openFileDialog = new OpenFileDialog
         {
             Title = "Open NIST File",
-            Filter = "NIST Files (*.nist;*.an2)|*.nist;*.an2|All Files (*.*)|*.*",
+            Filter = "NIST Files (*.nist;*.an2;*.xml)|*.nist;*.an2;*.xml|Traditional Format (*.nist;*.an2)|*.nist;*.an2|XML Format (*.xml)|*.xml|All Files (*.*)|*.*",
             CheckFileExists = true
         };
 
