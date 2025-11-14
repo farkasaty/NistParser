@@ -146,9 +146,13 @@
                                         <Border BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="4"
                                                Padding="12" Margin="0,0,0,8" Background="White">
                                             <StackPanel>
-                                                <!-- Field header with description -->
-                                                <TextBlock Text="{Binding FieldHeader}" FontWeight="SemiBold"
-                                                          Foreground="#0078D4" FontSize="13"/>
+                                                <!-- Field header with description and field number -->
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                                              Foreground="#0078D4" FontSize="13"/>
+                                                    <TextBlock Text="{Binding FieldNumber}" Foreground="#999" FontSize="11"
+                                                              VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                                </StackPanel>
 
                                                 <!-- Raw value -->
                                                 <TextBlock Text="{Binding DisplayValue}" Margin="0,5,0,0"

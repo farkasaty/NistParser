@@ -336,4 +336,12 @@ public class FieldViewModel
         string.IsNullOrEmpty(FieldDescription) || FieldDescription == FieldNumber
             ? FieldNumber
             : FieldDescription;
+
+    /// <summary>
+    /// Gets the display name without the field number (for showing alongside the field number)
+    /// </summary>
+    public string DisplayName =>
+        string.IsNullOrEmpty(FieldDescription) || FieldDescription == FieldNumber
+            ? FieldNumber
+            : FieldDescription;
 }
