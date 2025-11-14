@@ -112,12 +112,16 @@ public class FieldMetadata
     /// Creates a text field metadata
     /// </summary>
     public static FieldMetadata Text(string fieldNumber, string displayName, bool isRequired = false,
-        string? pattern = null, int? maxLength = null)
+        string? pattern = null, int? maxLength = null, string? helpText = null,
+        string? validationMessage = null, string? defaultValue = null)
     {
         return new FieldMetadata(fieldNumber, displayName, FieldDataType.Text, isRequired)
         {
             ValidationPattern = pattern,
-            MaxLength = maxLength
+            MaxLength = maxLength,
+            HelpText = helpText,
+            ValidationMessage = validationMessage,
+            DefaultValue = defaultValue
         };
     }
 
@@ -125,26 +129,29 @@ public class FieldMetadata
     /// Creates a numeric field metadata
     /// </summary>
     public static FieldMetadata Numeric(string fieldNumber, string displayName, bool isRequired = false,
-        string? pattern = null)
+        string? pattern = null, string? helpText = null, string? validationMessage = null)
     {
         return new FieldMetadata(fieldNumber, displayName, FieldDataType.Numeric, isRequired)
         {
-            ValidationPattern = pattern ?? @"^\d+(\.\d+)?$",
-            ValidationMessage = "Must be a valid number"
+            ValidationPattern = pattern ?? @"^\d+\.?\d*$",
+            ValidationMessage = validationMessage ?? "Must be a valid number",
+            HelpText = helpText
         };
     }
 
     /// <summary>
     /// Creates a date field metadata
     /// </summary>
-    public static FieldMetadata Date(string fieldNumber, string displayName, bool isRequired = false)
+    public static FieldMetadata Date(string fieldNumber, string displayName, bool isRequired = false,
+        string? helpText = null)
     {
         return new FieldMetadata(fieldNumber, displayName, FieldDataType.Date, isRequired)
         {
             ValidationPattern = @"^\d{8}$",
             ValidationMessage = "Must be a valid date in YYYYMMDD format",
             MinLength = 8,
-            MaxLength = 8
+            MaxLength = 8,
+            HelpText = helpText
         };
     }
 
@@ -152,11 +159,14 @@ public class FieldMetadata
     /// Creates an enumeration field metadata
     /// </summary>
     public static FieldMetadata Enum(string fieldNumber, string displayName,
-        Dictionary<string, string> enumValues, bool isRequired = false)
+        Dictionary<string, string> enumValues, bool isRequired = false,
+        string? helpText = null, string? defaultValue = null)
     {
         return new FieldMetadata(fieldNumber, displayName, FieldDataType.Enumeration, isRequired)
         {
-            EnumValues = enumValues
+            EnumValues = enumValues,
+            HelpText = helpText,
+            DefaultValue = defaultValue
         };
     }
 

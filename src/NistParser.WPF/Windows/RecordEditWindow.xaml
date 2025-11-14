@@ -4,13 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:editing="clr-namespace:NistParser.Editing;assembly=NistParser"
+        xmlns:local="clr-namespace:NistParser.WPF.Windows"
         mc:Ignorable="d"
         Title="Edit Record" Height="700" Width="900"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize">
     <Window.Resources>
-        <!-- Converter for field type to control visibility -->
+        <!-- Converters -->
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <local:FieldTypeToTextBoxVisibilityConverter x:Key="TextBoxVisibilityConverter"/>
+        <local:FieldTypeToComboBoxVisibilityConverter x:Key="ComboBoxVisibilityConverter"/>
 
         <!-- Style for section headers -->
         <Style x:Key="SectionHeader" TargetType="TextBlock">
@@ -102,7 +106,7 @@
                                     </StackPanel>
 
                                     <!-- Delete Button -->
-                                    <Button Grid.Row="0" Grid.Column="1" Content="Delete" Width="70" Height="25"
+                                    <Button Grid.Row="0" Grid.Column="1" Content="Delete" Width="100" Height="35"
                                            Click="DeleteField_Click" Tag="{Binding}"
                                            Visibility="{Binding CanDelete, Converter={StaticResource BoolToVis}}"/>
 

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using NistParser.Core;
 
@@ -90,7 +91,7 @@ public static class FieldValidator
         // Validate numeric format
         if (metadata.DataType == FieldDataType.Numeric)
         {
-            if (!double.TryParse(value, out _))
+            if (!double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out _))
             {
                 return ValidationResult.Fail(
                     $"{metadata.DisplayName} must be a valid number",

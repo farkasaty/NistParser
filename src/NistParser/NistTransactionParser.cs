@@ -363,7 +363,6 @@ public class NistTransactionParser
         // Parse tagged fields until we hit field 999 or run out of tagged fields
         int currentPos = position;
         int fieldStart = position;
-        bool foundField999 = false;
 
         while (currentPos < recordEndPosition)
         {
@@ -382,7 +381,6 @@ public class NistTransactionParser
                     {
                         // Field 999 marks the start of binary data
                         // The rest of the record (until recordEndPosition) is binary image data
-                        foundField999 = true;
                         int binaryDataStart = currentPos + 1; // After the GS
                         int binaryDataLength = recordEndPosition - binaryDataStart;
 

@@ -21,11 +21,6 @@ public partial class RecordEditWindow : Window
 
         _viewModel = new RecordEditorViewModel(record, editor);
         DataContext = _viewModel;
-
-        // Add converters to resources
-        Resources.Add("TextBoxVisibilityConverter", new FieldTypeToTextBoxVisibilityConverter());
-        Resources.Add("ComboBoxVisibilityConverter", new FieldTypeToComboBoxVisibilityConverter());
-        Resources.Add("NullToVisibilityConverter", new NullToVisibilityConverter());
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

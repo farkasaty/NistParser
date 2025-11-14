@@ -131,7 +131,7 @@ internal static class XmlFormatWriter
         return record.RecordType switch
         {
             RecordType.Type2_UserDefinedText => WriteType2Record((Type2Record)record),
-            RecordType.Type14_Fingerprint => WriteType14Record((Type14Record)record),
+            RecordType.Type14_FingerprintImage => WriteType14Record((Type14Record)record),
             _ => WriteGenericRecord(record)
         };
     }
