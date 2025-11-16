@@ -22,4 +22,8 @@
     <ProjectReference Include="..\..\src\NistParser\NistParser.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\config\type2-fields.json" CopyToOutputDirectory="PreserveNewest" LinkBase="config" />
+  </ItemGroup>
+
 </Project>

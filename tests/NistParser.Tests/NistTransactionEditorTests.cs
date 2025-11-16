@@ -196,6 +196,7 @@ public class NistTransactionEditorTests
 
         // Add Type-2 record
         var type2 = new Type2Record { IDC = "01" };
+        type2.UpdateField("2.002", "01"); // Add IDC field
         type2.UpdateField("2.004", "Doe");
         type2.UpdateField("2.005", "Jane");
         type2.UpdateField("2.024", "F");
@@ -203,7 +204,7 @@ public class NistTransactionEditorTests
 
         // Validate
         var validationResults = editor.ValidateAllChanges();
-        validationResults.IsValid.Should().BeTrue();
+        validationResults.IsValid.Should().BeTrue($"Validation failed: {validationResults}");
 
         // Save
         var bytes = editor.SaveToBytes();

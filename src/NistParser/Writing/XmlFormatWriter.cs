@@ -151,7 +151,7 @@ internal static class XmlFormatWriter
             new XElement(nc + "IdentificationID", record.IDC)
         ));
 
-        // Add all fields as UserDefinedDescriptiveText elements
+        // Add all defined fields as UserDefinedDescriptiveText elements
         foreach (var field in record.Fields.Values.Where(f => !f.FieldNumber.EndsWith(".001") && !f.FieldNumber.EndsWith(".002")))
         {
             if (field.FirstValue != null)
@@ -159,6 +159,18 @@ internal static class XmlFormatWriter
                 element.Add(new XElement(itl + "UserDefinedDescriptiveText",
                     new XElement(itl + "UserDefinedFieldID", field.FieldNumber),
                     new XElement(nc + "DescriptionText", field.FirstValue)
+                ));
+            }
+        }
+
+        // Add all unknown fields as UserDefinedDescriptiveText elements
+        foreach (var unknownField in record.UnknownFields)
+        {
+            if (!string.IsNullOrEmpty(unknownField.Value))
+            {
+                element.Add(new XElement(itl + "UserDefinedDescriptiveText",
+                    new XElement(itl + "UserDefinedFieldID", unknownField.Key),
+                    new XElement(nc + "DescriptionText", unknownField.Value)
                 ));
             }
         }

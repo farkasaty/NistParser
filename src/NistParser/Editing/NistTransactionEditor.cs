@@ -99,6 +99,71 @@ public class NistTransactionEditor
     }
 
     /// <summary>
+    /// Adds an unknown field (field without metadata definition) to a record
+    /// </summary>
+    /// <param name="record">The record to update</param>
+    /// <param name="fieldNumber">The field number (e.g., "2.999")</param>
+    /// <param name="value">The field value as string</param>
+    /// <returns>Validation result</returns>
+    public ValidationResult AddUnknownField(NistRecord record, string fieldNumber, string value)
+    {
+        // Basic validation - check field number format
+        if (string.IsNullOrWhiteSpace(fieldNumber))
+        {
+            return ValidationResult.Fail("Field number cannot be empty", fieldNumber);
+        }
+
+        // Check if field already exists (either in Fields or UnknownFields)
+        if (record.HasField(fieldNumber) || record.HasUnknownField(fieldNumber))
+        {
+            return ValidationResult.Fail($"Field {fieldNumber} already exists in record", fieldNumber);
+        }
+
+        // Add to UnknownFields
+        record.SetUnknownField(fieldNumber, value);
+
+        return ValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Updates an unknown field value
+    /// </summary>
+    /// <param name="record">The record to update</param>
+    /// <param name="fieldNumber">The field number</param>
+    /// <param name="value">The new value</param>
+    /// <returns>Validation result</returns>
+    public ValidationResult UpdateUnknownField(NistRecord record, string fieldNumber, string value)
+    {
+        // Check if field exists
+        if (!record.HasUnknownField(fieldNumber))
+        {
+            return ValidationResult.Fail($"Unknown field {fieldNumber} does not exist in record", fieldNumber);
+        }
+
+        // Update the value
+        record.SetUnknownField(fieldNumber, value);
+
+        return ValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Removes an unknown field from a record
+    /// </summary>
+    /// <param name="record">The record to update</param>
+    /// <param name="fieldNumber">The field number to remove</param>
+    /// <returns>Validation result</returns>
+    public ValidationResult RemoveUnknownField(NistRecord record, string fieldNumber)
+    {
+        // Remove the field
+        if (!record.RemoveUnknownField(fieldNumber))
+        {
+            return ValidationResult.Fail($"Unknown field {fieldNumber} does not exist in record", fieldNumber);
+        }
+
+        return ValidationResult.Success();
+    }
+
+    /// <summary>
     /// Validates all changes in the transaction
     /// </summary>
     /// <returns>Validation results</returns>

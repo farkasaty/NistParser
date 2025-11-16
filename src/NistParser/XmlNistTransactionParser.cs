@@ -592,9 +592,101 @@ public static class XmlNistTransactionParser
     /// </summary>
     private static void ParseGenericFields(XElement element, NistRecord record, int recordType)
     {
-        // This is a placeholder for parsing user-defined or extension fields
-        // In a complete implementation, you would iterate through all child elements
-        // and create appropriate NistField objects
+        // Load configuration to get XML element name mappings
+        Models.Type2FieldConfigurationRoot? config = null;
+        Dictionary<string, Models.Type2FieldDefinition> xmlElementToFieldDef = new();
+
+        if (recordType == 2)
+        {
+            try
+            {
+                config = Configuration.Type2FieldConfigurationLoader.LoadConfiguration();
+
+                // Build reverse lookup: XML element name -> field definition
+                foreach (var fieldDef in config.Type2Fields)
+                {
+                    if (!string.IsNullOrWhiteSpace(fieldDef.XmlElementName))
+                    {
+                        xmlElementToFieldDef[fieldDef.XmlElementName] = fieldDef;
+                    }
+                }
+            }
+            catch
+            {
+                // If config loading fails, we still try to parse UserDefinedDescriptiveText elements
+            }
+        }
+
+        // Parse UserDefinedDescriptiveText elements (simple key-value format)
+        var userDefinedTexts = element.Elements(itl + "UserDefinedDescriptiveText");
+        foreach (var userDefinedText in userDefinedTexts)
+        {
+            var fieldIdElement = userDefinedText.Element(itl + "UserDefinedFieldID");
+            var descriptionTextElement = userDefinedText.Element(nc + "DescriptionText");
+
+            if (fieldIdElement != null && descriptionTextElement != null)
+            {
+                string fieldNumber = fieldIdElement.Value;
+                string value = descriptionTextElement.Value;
+
+                // Check if this field has metadata
+                var metadata = Editing.FieldMetadataProvider.GetFieldMetadata(fieldNumber);
+
+                if (metadata != null)
+                {
+                    AddField(record, fieldNumber, value);
+                }
+                else
+                {
+                    // Unknown field - add to UnknownFields
+                    record.SetUnknownField(fieldNumber, value);
+                }
+            }
+        }
+
+        // Parse domain-specific XML elements (if configured)
+        if (xmlElementToFieldDef.Count > 0)
+        {
+            foreach (var childElement in element.Elements())
+            {
+                // Skip already-processed elements
+                if (childElement.Name == biom + "RecordCategoryCode" ||
+                    childElement.Name == biom + "ImageReferenceIdentification" ||
+                    childElement.Name == itl + "UserDefinedDescriptiveText")
+                {
+                    continue;
+                }
+
+                // Check if this element matches a configured field
+                string elementName = $"{childElement.Name.NamespaceName.Split('/').Last()}:{childElement.Name.LocalName}";
+
+                // Try to find by full namespace:localname
+                Models.Type2FieldDefinition? fieldDef = null;
+                foreach (var kvp in xmlElementToFieldDef)
+                {
+                    if (childElement.Name.LocalName == kvp.Key.Split(':').Last())
+                    {
+                        fieldDef = kvp.Value;
+                        break;
+                    }
+                }
+
+                if (fieldDef != null)
+                {
+                    string value = childElement.Value;
+                    var metadata = Editing.FieldMetadataProvider.GetFieldMetadata(fieldDef.FieldNumber);
+
+                    if (metadata != null)
+                    {
+                        AddField(record, fieldDef.FieldNumber, value);
+                    }
+                    else
+                    {
+                        record.SetUnknownField(fieldDef.FieldNumber, value);
+                    }
+                }
+            }
+        }
     }
 
     /// <summary>

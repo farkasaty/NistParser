@@ -1,0 +1,164 @@
+{
+  "type2Fields": [
+    {
+      "fieldNumber": "2.003",
+      "name": "System Information",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 200,
+      "xmlElementName": "itl:SystemInformation"
+    },
+    {
+      "fieldNumber": "2.004",
+      "name": "Surname",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 100,
+      "xmlElementName": "nc:PersonSurName",
+      "xmlParentPath": "nc:PersonName"
+    },
+    {
+      "fieldNumber": "2.005",
+      "name": "Given Name",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 100,
+      "xmlElementName": "nc:PersonGivenName",
+      "xmlParentPath": "nc:PersonName"
+    },
+    {
+      "fieldNumber": "2.006",
+      "name": "Middle Name",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 100,
+      "xmlElementName": "nc:PersonMiddleName",
+      "xmlParentPath": "nc:PersonName"
+    },
+    {
+      "fieldNumber": "2.007",
+      "name": "Date of Birth",
+      "dataType": "date",
+      "required": false,
+      "format": "YYYYMMDD",
+      "xmlElementName": "nc:PersonBirthDate",
+      "xmlDateFormat": "YYYY-MM-DD"
+    },
+    {
+      "fieldNumber": "2.018",
+      "name": "Place of Birth",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 100,
+      "xmlElementName": "nc:PersonBirthLocation"
+    },
+    {
+      "fieldNumber": "2.020",
+      "name": "Social Security Number",
+      "dataType": "text",
+      "required": false,
+      "validationPattern": "^\\d{9}$|^\\d{3}-\\d{2}-\\d{4}$",
+      "xmlElementName": "nc:PersonSSNIdentification"
+    },
+    {
+      "fieldNumber": "2.022",
+      "name": "Height",
+      "dataType": "numeric",
+      "required": false,
+      "minValue": 50,
+      "maxValue": 300,
+      "xmlElementName": "nc:PersonHeightMeasure"
+    },
+    {
+      "fieldNumber": "2.024",
+      "name": "Sex",
+      "dataType": "enum",
+      "required": false,
+      "enumValues": [
+        { "code": "M", "description": "Male" },
+        { "code": "F", "description": "Female" },
+        { "code": "U", "description": "Unknown" },
+        { "code": "X", "description": "Unspecified" }
+      ],
+      "xmlElementName": "nc:PersonSexCode"
+    },
+    {
+      "fieldNumber": "2.025",
+      "name": "Race",
+      "dataType": "enum",
+      "required": false,
+      "enumValues": [
+        { "code": "W", "description": "White" },
+        { "code": "B", "description": "Black or African American" },
+        { "code": "A", "description": "Asian" },
+        { "code": "I", "description": "American Indian or Alaska Native" },
+        { "code": "P", "description": "Native Hawaiian or Pacific Islander" },
+        { "code": "U", "description": "Unknown" }
+      ],
+      "xmlElementName": "nc:PersonRaceCode"
+    },
+    {
+      "fieldNumber": "2.026",
+      "name": "Eye Color",
+      "dataType": "enum",
+      "required": false,
+      "enumValues": [
+        { "code": "BLK", "description": "Black" },
+        { "code": "BLU", "description": "Blue" },
+        { "code": "BRO", "description": "Brown" },
+        { "code": "GRY", "description": "Gray" },
+        { "code": "GRN", "description": "Green" },
+        { "code": "HAZ", "description": "Hazel" },
+        { "code": "MAR", "description": "Maroon" },
+        { "code": "PNK", "description": "Pink" },
+        { "code": "XXX", "description": "Unknown" }
+      ],
+      "xmlElementName": "nc:PersonEyeColorCode"
+    },
+    {
+      "fieldNumber": "2.027",
+      "name": "Hair Color",
+      "dataType": "enum",
+      "required": false,
+      "enumValues": [
+        { "code": "BAL", "description": "Bald" },
+        { "code": "BLK", "description": "Black" },
+        { "code": "BLN", "description": "Blonde" },
+        { "code": "BLU", "description": "Blue" },
+        { "code": "BRO", "description": "Brown" },
+        { "code": "GRY", "description": "Gray" },
+        { "code": "GRN", "description": "Green" },
+        { "code": "ONG", "description": "Orange" },
+        { "code": "PNK", "description": "Pink" },
+        { "code": "PLE", "description": "Purple" },
+        { "code": "RED", "description": "Red" },
+        { "code": "SDY", "description": "Sandy" },
+        { "code": "WHI", "description": "White" },
+        { "code": "XXX", "description": "Unknown" }
+      ],
+      "xmlElementName": "nc:PersonHairColorCode"
+    },
+    {
+      "fieldNumber": "2.030",
+      "name": "Citizenship",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 50,
+      "xmlElementName": "nc:PersonCitizenshipText"
+    },
+    {
+      "fieldNumber": "2.040",
+      "name": "Occupation",
+      "dataType": "text",
+      "required": false,
+      "maxLength": 100,
+      "xmlElementName": "nc:PersonOccupationText"
+    }
+  ],
+  "schemaVersion": "1.0",
+  "defaultNamespaces": {
+    "itl": "http://biometrics.nist.gov/standard/2011",
+    "nc": "http://niem.gov/niem/niem-core/2.0",
+    "biom": "http://niem.gov/niem/biometrics/1.0"
+  }
+}

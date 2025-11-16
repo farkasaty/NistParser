@@ -111,6 +111,12 @@ internal static class TraditionalFormatWriter
             .OrderBy(ParseFieldNumber)
             .ToList();
 
+        // Also get unknown fields and sort them
+        var unknownFieldNumbers = record.UnknownFields.Keys
+            .Where(fn => !fn.EndsWith(".001")) // Exclude LEN field
+            .OrderBy(ParseFieldNumber)
+            .ToList();
+
         // Write each field (we'll write LEN field first after calculating)
         var fieldData = new List<byte[]>();
 
@@ -120,6 +126,20 @@ internal static class TraditionalFormatWriter
             if (field != null)
             {
                 var data = WriteField(field, hasBinaryData);
+                fieldData.Add(data);
+            }
+        }
+
+        // Write unknown fields as simple text fields
+        foreach (var fieldNumber in unknownFieldNumbers)
+        {
+            var value = record.GetUnknownField(fieldNumber);
+            if (value != null)
+            {
+                // Create a temporary NistField for writing
+                var tempField = new NistField(fieldNumber);
+                tempField.SetValue(value);
+                var data = WriteField(tempField, hasBinaryData);
                 fieldData.Add(data);
             }
         }
