@@ -12,6 +12,14 @@ public static class FieldDescriptions
     /// <returns>Description string, or the field number if no description is available</returns>
     public static string GetDescription(string fieldNumber)
     {
+        // First check FieldMetadataProvider for configurable fields (especially Type-2)
+        var metadata = Editing.FieldMetadataProvider.GetFieldMetadata(fieldNumber);
+        if (metadata != null && !string.IsNullOrWhiteSpace(metadata.DisplayName))
+        {
+            return metadata.DisplayName;
+        }
+
+        // Fallback to hardcoded descriptions
         return fieldNumber switch
         {
             // Type-1 Fields
