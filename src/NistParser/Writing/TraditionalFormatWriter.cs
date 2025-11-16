@@ -219,7 +219,7 @@ namespace NistParser.Writing
             using var ms = new MemoryStream();
 
             // Write field number
-            var fieldNumBytes = Encoding.ASCII.GetBytes(field.FieldNumber);
+            var fieldNumBytes = Encoding.UTF8.GetBytes(field.FieldNumber);
             ms.Write(fieldNumBytes, 0, fieldNumBytes.Length);
 
             // Write colon separator
@@ -248,7 +248,7 @@ namespace NistParser.Writing
                             ms.WriteByte(SeparatorConstants.US); // Separate items
                         }
 
-                        var itemBytes = Encoding.ASCII.GetBytes(subfield.Items[j]);
+                        var itemBytes = Encoding.UTF8.GetBytes(subfield.Items[j]);
                         ms.Write(itemBytes, 0, itemBytes.Length);
                     }
                 }
