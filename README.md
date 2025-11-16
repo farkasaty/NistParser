@@ -1,10 +1,16 @@
 # NistParser
 
-A .NET 9 library for parsing ANSI/NIST-ITL biometric data interchange files.
+A .NET Standard 2.0 library for parsing ANSI/NIST-ITL biometric data interchange files.
 
 ## Overview
 
 NistParser is a comprehensive library for reading and parsing ANSI/NIST-ITL (American National Standards Institute / National Institute of Standards and Technology - Information Technology Laboratory) biometric data files. These files are used worldwide for exchanging biometric information including fingerprints, facial images, iris scans, palm prints, DNA data, and more.
+
+**Target Framework**: .NET Standard 2.0 - Compatible with:
+- ✅ **.NET Framework 4.6.1+** (including **4.8**)
+- ✅ .NET Core 2.0+
+- ✅ .NET 5, 6, 7, 8, 9+
+- ✅ Mono, Xamarin, and Unity
 
 ## Features
 
