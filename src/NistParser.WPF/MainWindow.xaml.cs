@@ -234,6 +234,18 @@ public partial class MainWindow : Window
             });
         }
 
+        // Add unknown fields to the display
+        foreach (var unknownField in record.UnknownFields.OrderBy(f => f.Key))
+        {
+            fieldViewModels.Add(new FieldViewModel
+            {
+                FieldNumber = unknownField.Key,
+                FieldDescription = "Unknown Field (not defined in configuration)",
+                DisplayValue = unknownField.Value,
+                InterpretedValue = null
+            });
+        }
+
         FieldsItemsControl.ItemsSource = fieldViewModels;
     }
 

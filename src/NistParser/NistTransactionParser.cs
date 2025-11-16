@@ -305,7 +305,20 @@ public class NistTransactionParser
                 continue;
 
             var field = FieldParser.ParseTaggedField(fieldData);
-            record.AddField(field);
+
+            // Check if this field has metadata definition
+            var metadata = Editing.FieldMetadataProvider.GetFieldMetadata(field.FieldNumber);
+
+            if (metadata != null)
+            {
+                // Field is defined - add to normal Fields collection
+                record.AddField(field);
+            }
+            else
+            {
+                // Field is not defined - add to UnknownFields as string
+                record.SetUnknownField(field.FieldNumber, field.FirstValue ?? string.Empty);
+            }
         }
 
         // Extract record length and IDC

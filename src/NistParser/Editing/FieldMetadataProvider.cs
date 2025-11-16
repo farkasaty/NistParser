@@ -1,4 +1,6 @@
 using NistParser.Constants;
+using NistParser.Configuration;
+using NistParser.Models;
 
 namespace NistParser.Editing;
 
@@ -158,6 +160,7 @@ public static class FieldMetadataProvider
     {
         // Type-2: User-Defined Descriptive Text Record
 
+        // Always add mandatory fields
         // 2.001 - LEN (Calculated, not editable)
         _metadata["2.001"] = FieldMetadata.Calculated("2.001", "Logical Record Length");
 
@@ -167,108 +170,83 @@ public static class FieldMetadataProvider
             helpText: "Links related records (00-99)",
             validationMessage: "Must be a 1 or 2 digit number (00-99)");
 
-        // Common Type-2 fields (user-defined, but commonly used)
+        // Load user-defined fields from configuration file
+        try
+        {
+            var config = Type2FieldConfigurationLoader.LoadConfiguration();
 
-        // 2.003 - System Information (optional, varies by implementation)
-        _metadata["2.003"] = FieldMetadata.Text("2.003", "System Information", isRequired: false, maxLength: 200,
-            helpText: "System or implementation-specific information");
-
-        // 2.004 - Surname
-        _metadata["2.004"] = FieldMetadata.Text("2.004", "Surname", isRequired: false, maxLength: 100,
-            helpText: "Last name or family name");
-
-        // 2.005 - Given Name
-        _metadata["2.005"] = FieldMetadata.Text("2.005", "Given Name", isRequired: false, maxLength: 100,
-            helpText: "First name");
-
-        // 2.006 - Middle Name
-        _metadata["2.006"] = FieldMetadata.Text("2.006", "Middle Name", isRequired: false, maxLength: 100,
-            helpText: "Middle name or initial");
-
-        // 2.007 - Date of Birth
-        _metadata["2.007"] = FieldMetadata.Date("2.007", "Date of Birth", isRequired: false,
-            helpText: "Date of birth in YYYYMMDD format");
-
-        // 2.008 - Aliases (optional)
-        _metadata["2.008"] = FieldMetadata.Text("2.008", "Aliases", isRequired: false, maxLength: 200,
-            helpText: "Known aliases or alternate names");
-
-        // 2.018 - Place of Birth
-        _metadata["2.018"] = FieldMetadata.Text("2.018", "Place of Birth", isRequired: false, maxLength: 100,
-            helpText: "City, state, or country of birth");
-
-        // 2.020 - Social Security Number (optional)
-        _metadata["2.020"] = FieldMetadata.Text("2.020", "Social Security Number", isRequired: false,
-            pattern: @"^\d{9}$|^\d{3}-\d{2}-\d{4}$", maxLength: 11,
-            helpText: "SSN in format XXXXXXXXX or XXX-XX-XXXX",
-            validationMessage: "Must be 9 digits or in format XXX-XX-XXXX");
-
-        // 2.022 - Height (optional)
-        _metadata["2.022"] = FieldMetadata.Numeric("2.022", "Height", isRequired: false,
-            helpText: "Height in centimeters");
-
-        // 2.024 - Sex
-        _metadata["2.024"] = FieldMetadata.Enum("2.024", "Sex",
-            new Dictionary<string, string>
+            foreach (var fieldDef in config.Type2Fields)
             {
-                { "M", "Male" },
-                { "F", "Female" },
-                { "U", "Unknown" },
-                { "X", "Unspecified" }
-            }, isRequired: false,
-            helpText: "Biological sex");
+                var metadata = ConvertToFieldMetadata(fieldDef);
+                _metadata[fieldDef.FieldNumber] = metadata;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Failed to load Type-2 field configuration: {ex.Message}");
+            Console.WriteLine("Continuing with minimal configuration (only required fields 2.001, 2.002)");
+        }
+    }
 
-        // 2.025 - Race
-        _metadata["2.025"] = FieldMetadata.Enum("2.025", "Race",
-            new Dictionary<string, string>
-            {
-                { "W", "White" },
-                { "B", "Black" },
-                { "A", "Asian or Pacific Islander" },
-                { "I", "American Indian or Alaskan Native" },
-                { "U", "Unknown" }
-            }, isRequired: false,
-            helpText: "Race or ethnicity");
+    /// <summary>
+    /// Converts a Type2FieldDefinition from JSON config to FieldMetadata
+    /// </summary>
+    private static FieldMetadata ConvertToFieldMetadata(Type2FieldDefinition fieldDef)
+    {
+        FieldMetadata metadata;
 
-        // 2.026 - Eye Color (optional)
-        _metadata["2.026"] = FieldMetadata.Enum("2.026", "Eye Color",
-            new Dictionary<string, string>
-            {
-                { "BLK", "Black" },
-                { "BLU", "Blue" },
-                { "BRO", "Brown" },
-                { "GRY", "Gray" },
-                { "GRN", "Green" },
-                { "HAZ", "Hazel" },
-                { "MAR", "Maroon" },
-                { "PNK", "Pink" },
-                { "XXX", "Unknown" }
-            }, isRequired: false,
-            helpText: "Eye color");
+        switch (fieldDef.DataType.ToLower())
+        {
+            case "text":
+                metadata = FieldMetadata.Text(
+                    fieldDef.FieldNumber,
+                    fieldDef.Name,
+                    isRequired: fieldDef.Required,
+                    maxLength: fieldDef.MaxLength ?? 0,
+                    pattern: fieldDef.ValidationPattern);
+                break;
 
-        // 2.027 - Hair Color (optional)
-        _metadata["2.027"] = FieldMetadata.Enum("2.027", "Hair Color",
-            new Dictionary<string, string>
-            {
-                { "BAL", "Bald" },
-                { "BLK", "Black" },
-                { "BLN", "Blonde" },
-                { "BRO", "Brown" },
-                { "GRY", "Gray" },
-                { "RED", "Red" },
-                { "SDY", "Sandy" },
-                { "WHI", "White" },
-                { "XXX", "Unknown" }
-            }, isRequired: false,
-            helpText: "Hair color");
+            case "numeric":
+                metadata = FieldMetadata.Numeric(
+                    fieldDef.FieldNumber,
+                    fieldDef.Name,
+                    isRequired: fieldDef.Required);
+                // Note: min/max values could be validated in FieldValidator if needed
+                break;
 
-        // 2.030 - Citizenship (optional)
-        _metadata["2.030"] = FieldMetadata.Text("2.030", "Citizenship", isRequired: false, maxLength: 50,
-            helpText: "Country of citizenship");
+            case "date":
+                metadata = FieldMetadata.Date(
+                    fieldDef.FieldNumber,
+                    fieldDef.Name,
+                    isRequired: fieldDef.Required);
+                break;
 
-        // 2.040 - Occupation (optional)
-        _metadata["2.040"] = FieldMetadata.Text("2.040", "Occupation", isRequired: false, maxLength: 100,
-            helpText: "Occupation or profession");
+            case "enum":
+                var enumValues = new Dictionary<string, string>();
+                if (fieldDef.EnumValues != null)
+                {
+                    foreach (var enumValue in fieldDef.EnumValues)
+                    {
+                        enumValues[enumValue.Code] = enumValue.Description;
+                    }
+                }
+                metadata = FieldMetadata.Enum(
+                    fieldDef.FieldNumber,
+                    fieldDef.Name,
+                    enumValues,
+                    isRequired: fieldDef.Required);
+                break;
+
+            default:
+                // Fallback to text if unknown type
+                metadata = FieldMetadata.Text(
+                    fieldDef.FieldNumber,
+                    fieldDef.Name,
+                    isRequired: fieldDef.Required);
+                break;
+        }
+
+        return metadata;
     }
 
     /// <summary>

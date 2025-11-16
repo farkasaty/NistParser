@@ -32,6 +32,13 @@ public abstract class NistRecord
     public Dictionary<string, NistField> Fields { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets unknown fields (fields without metadata definition) as simple key-value pairs.
+    /// These are fields that exist in the file but are not defined in the field configuration.
+    /// Key is the field number (e.g., "2.999"), value is the field content as string.
+    /// </summary>
+    public Dictionary<string, string> UnknownFields { get; set; } = new();
+
+    /// <summary>
     /// Gets the encoding type for this record
     /// </summary>
     public RecordEncoding Encoding => RecordEncodingExtensions.GetEncoding(RecordType);
@@ -104,10 +111,52 @@ public abstract class NistRecord
     }
 
     /// <summary>
+    /// Gets an unknown field value by field number
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+    /// <returns>The field value, or null if not found</returns>
+    public string? GetUnknownField(string fieldNumber)
+    {
+        return UnknownFields.TryGetValue(fieldNumber, out var value) ? value : null;
+    }
+
+    /// <summary>
+    /// Sets an unknown field value (or adds it if it doesn't exist)
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+    /// <param name="value">The field value</param>
+    public void SetUnknownField(string fieldNumber, string value)
+    {
+        UnknownFields[fieldNumber] = value;
+    }
+
+    /// <summary>
+    /// Removes an unknown field
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+    /// <returns>True if the field was removed, false if it didn't exist</returns>
+    public bool RemoveUnknownField(string fieldNumber)
+    {
+        return UnknownFields.Remove(fieldNumber);
+    }
+
+    /// <summary>
+    /// Checks if an unknown field exists
+    /// </summary>
+    /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+    /// <returns>True if the field exists in UnknownFields</returns>
+    public bool HasUnknownField(string fieldNumber)
+    {
+        return UnknownFields.ContainsKey(fieldNumber);
+    }
+
+    /// <summary>
     /// Returns a string representation of this record
     /// </summary>
     public override string ToString()
     {
-        return $"Record Type {(int)RecordType} (IDC: {IDC}), {Fields.Count} fields, {RecordLength} bytes";
+        var totalFields = Fields.Count + UnknownFields.Count;
+        var unknownInfo = UnknownFields.Count > 0 ? $" ({UnknownFields.Count} unknown)" : "";
+        return $"Record Type {(int)RecordType} (IDC: {IDC}), {totalFields} fields{unknownInfo}, {RecordLength} bytes";
     }
 }
