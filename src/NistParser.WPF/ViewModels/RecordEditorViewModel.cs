@@ -132,11 +132,15 @@ public class RecordEditorViewModel : INotifyPropertyChanged
             var field = _record.GetField(fieldMeta.FieldNumber);
             var value = field?.FirstValue;
 
-            _originalValues[fieldMeta.FieldNumber] = value ?? string.Empty;
+            // Only show fields that exist OR are required
+            if (field != null || fieldMeta.IsRequired)
+            {
+                _originalValues[fieldMeta.FieldNumber] = value ?? string.Empty;
 
-            var viewModel = new EditableFieldViewModel(fieldMeta, value);
-            viewModel.PropertyChanged += Field_PropertyChanged;
-            EditableFields.Add(viewModel);
+                var viewModel = new EditableFieldViewModel(fieldMeta, value);
+                viewModel.PropertyChanged += Field_PropertyChanged;
+                EditableFields.Add(viewModel);
+            }
         }
     }
 

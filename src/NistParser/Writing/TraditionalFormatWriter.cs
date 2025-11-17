@@ -122,29 +122,40 @@ namespace NistParser.Writing
             .OrderBy(ParseFieldNumber)
             .ToList();
 
+            // Combine all field numbers to determine which is last
+            var allFieldNumbers = new List<string>(fieldNumbers);
+            allFieldNumbers.AddRange(unknownFieldNumbers);
+
             // Write each field (we'll write LEN field first after calculating)
             var fieldData = new List<byte[]>();
 
-            foreach (var fieldNumber in fieldNumbers)
+            for (int i = 0; i < fieldNumbers.Count; i++)
             {
+                var fieldNumber = fieldNumbers[i];
                 var field = record.GetField(fieldNumber);
                 if (field != null)
                 {
-                    var data = WriteField(field, hasBinaryData);
+                    // Check if this is the last non-binary field
+                    bool isLastField = (i == fieldNumbers.Count - 1) && unknownFieldNumbers.Count == 0 && !hasBinaryData;
+                    var data = WriteField(field, hasBinaryData, isLastField);
                     fieldData.Add(data);
                 }
             }
 
             // Write unknown fields as simple text fields
-            foreach (var fieldNumber in unknownFieldNumbers)
+            for (int i = 0; i < unknownFieldNumbers.Count; i++)
             {
+                var fieldNumber = unknownFieldNumbers[i];
                 var value = record.GetUnknownField(fieldNumber);
                 if (value != null)
                 {
                     // Create a temporary NistField for writing
                     var tempField = new NistField(fieldNumber);
                     tempField.SetValue(value);
-                    var data = WriteField(tempField, hasBinaryData);
+
+                    // Check if this is the last non-binary field
+                    bool isLastField = (i == unknownFieldNumbers.Count - 1) && !hasBinaryData;
+                    var data = WriteField(tempField, hasBinaryData, isLastField);
                     fieldData.Add(data);
                 }
             }
@@ -161,7 +172,8 @@ namespace NistParser.Writing
             var lenField = record.GetField(lenFieldNumber);
             if (lenField != null)
             {
-                var lenData = WriteField(lenField, hasBinaryData);
+                bool isLenOnlyField = fieldData.Count == 0 && !hasBinaryData;
+                var lenData = WriteField(lenField, hasBinaryData, isLenOnlyField);
                 recordStream.Write(lenData, 0, lenData.Length);
             }
 
@@ -214,7 +226,7 @@ namespace NistParser.Writing
         /// <summary>
         /// Writes a single field
         /// </summary>
-        private static byte[] WriteField(NistField field, bool isBinaryRecord)
+        private static byte[] WriteField(NistField field, bool isBinaryRecord, bool isLastField)
         {
             using var ms = new MemoryStream();
 
@@ -254,8 +266,8 @@ namespace NistParser.Writing
                 }
             }
 
-            // Write GS separator (except for binary field 999)
-            if (!field.FieldNumber.EndsWith(".999"))
+            // Write GS separator (except for binary field 999 or if this is the last field in the record)
+            if (!field.FieldNumber.EndsWith(".999") && !isLastField)
             {
                 ms.WriteByte(SeparatorConstants.GS);
             }
