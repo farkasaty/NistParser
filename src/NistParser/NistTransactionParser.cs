@@ -392,31 +392,10 @@ namespace NistParser
                         byte[] fieldData = new byte[fieldLength];
                         Array.Copy(fileData, fieldStart, fieldData, 0, fieldLength);
 
-                        // Check if this is field 999 (image data field)
+                        // Parse regular tagged field
                         string? fieldNumber = FieldParser.ExtractFieldNumber(fieldData);
-                        if (fieldNumber != null && fieldNumber.EndsWith(".999"))
+                        if (fieldNumber != null)
                         {
-                            // Field 999 marks the start of binary data
-                            // The rest of the record (until recordEndPosition) is binary image data
-                            int binaryDataStart = currentPos + 1; // After the GS
-                            int binaryDataLength = recordEndPosition - binaryDataStart;
-
-                            if (binaryDataLength > 0)
-                            {
-                                byte[] binaryData = new byte[binaryDataLength];
-                                Array.Copy(fileData, binaryDataStart, binaryData, 0, binaryDataLength);
-
-                                var field = new NistField(fieldNumber)
-                                {
-                                    BinaryData = binaryData
-                                };
-                                record.AddField(field);
-                            }
-                            break;
-                        }
-                        else if (fieldNumber != null)
-                        {
-                            // Regular tagged field
                             try
                             {
                                 var field = FieldParser.ParseTaggedField(fieldData);
@@ -430,9 +409,77 @@ namespace NistParser
                     }
 
                     fieldStart = currentPos + 1;
+
+                    // Check if the NEXT field is .999 - if so, stop processing and handle it as binary
+                    if (fieldStart < recordEndPosition)
+                    {
+                        // Try to extract the next field number
+                        int nextFieldLength = Math.Min(10, recordEndPosition - fieldStart);
+                        byte[] nextFieldPreview = new byte[nextFieldLength];
+                        Array.Copy(fileData, fieldStart, nextFieldPreview, 0, nextFieldLength);
+                        string? nextFieldNumber = FieldParser.ExtractFieldNumber(nextFieldPreview);
+
+                        if (nextFieldNumber != null && nextFieldNumber.EndsWith(".999"))
+                        {
+                            // The rest of the record is binary field 999 - stop the loop
+                            break;
+                        }
+                    }
                 }
 
                 currentPos++;
+            }
+
+            // After processing all GS-separated fields, check if there's remaining data
+            // This handles field 999 which doesn't have a GS separator after it
+            if (fieldStart < recordEndPosition)
+            {
+                int remainingLength = recordEndPosition - fieldStart;
+                byte[] remainingData = new byte[remainingLength];
+                Array.Copy(fileData, fieldStart, remainingData, 0, remainingLength);
+
+                // Check if this is field 999
+                string? fieldNumber = FieldParser.ExtractFieldNumber(remainingData);
+                if (fieldNumber != null && fieldNumber.EndsWith(".999"))
+                {
+                    // Find the colon to separate field number from binary data
+                    int colonIndex = Array.IndexOf(remainingData, SeparatorConstants.COLON);
+                    if (colonIndex != -1)
+                    {
+                        // Binary data starts after the colon
+                        int binaryDataStart = colonIndex + 1;
+                        // Binary data ends before the FS separator (last byte)
+                        int binaryDataLength = remainingData.Length - binaryDataStart - 1; // -1 for the FS separator
+
+                        if (binaryDataLength > 0)
+                        {
+                            byte[] binaryData = new byte[binaryDataLength];
+                            Array.Copy(remainingData, binaryDataStart, binaryData, 0, binaryDataLength);
+
+                            var field = new NistField(fieldNumber)
+                            {
+                                BinaryData = binaryData
+                            };
+                            record.AddField(field);
+                        }
+                    }
+                }
+                else
+                {
+                    // Not field 999 - parse as regular tagged field
+                    if (fieldNumber != null)
+                    {
+                        try
+                        {
+                            var field = FieldParser.ParseTaggedField(remainingData);
+                            record.AddField(field);
+                        }
+                        catch (InvalidFieldFormatException)
+                        {
+                            // Skip malformed fields
+                        }
+                    }
+                }
             }
 
             // Extract record length and IDC from parsed fields
