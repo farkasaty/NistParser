@@ -183,6 +183,118 @@ public class NistTransactionEditorTests
     }
 
     [Fact]
+    public void SetFieldValue_UnknownField_ShouldUpdateExistingFieldNotCreateDuplicate()
+    {
+        // Arrange - Create Type-2 record with unknown field (2.003 is not in type2-fields.json)
+        // Manually add to UnknownFields to simulate parsing behavior
+        var transaction = CreateTestTransaction();
+        var type2 = new Type2Record { IDC = "01" };
+        type2.UpdateField("2.002", "01");
+        type2.SetUnknownField("2.003", "ORIGINAL-VALUE"); // Add to UnknownFields (simulates parsing)
+        transaction.Records.Add(type2);
+
+        var editor = new NistTransactionEditor(transaction);
+
+        // Act - Try to edit the unknown field
+        var result = editor.SetFieldValue(type2, "2.003", "MODIFIED-VALUE");
+
+        // Assert
+        result.IsValid.Should().BeTrue();
+        type2.GetFieldValue("2.003").Should().Be("MODIFIED-VALUE");
+
+        // Verify the field is in UnknownFields and was updated there
+        type2.UnknownFields.Should().ContainKey("2.003");
+        type2.GetUnknownField("2.003").Should().Be("MODIFIED-VALUE");
+
+        // Verify the field is NOT in Fields (should stay in UnknownFields)
+        type2.Fields.Should().NotContainKey("2.003", "unknown field should not be moved to Fields");
+
+        // Verify no duplicate - should exist in exactly ONE collection
+        var inFields = type2.Fields.ContainsKey("2.003");
+        var inUnknownFields = type2.UnknownFields.ContainsKey("2.003");
+        (inFields ^ inUnknownFields).Should().BeTrue("field should be in exactly one collection (XOR)");
+    }
+
+    [Fact]
+    public void SetFieldValue_UnknownField_RoundTripShouldPreserveEdit()
+    {
+        // Arrange - Create Type-2 record with unknown field
+        var transaction = CreateTestTransaction();
+        var type2 = new Type2Record { IDC = "01" };
+        type2.UpdateField("2.002", "01");
+        type2.SetUnknownField("2.003", "ORIGINAL-VALUE"); // Add to UnknownFields (simulates parsing)
+        type2.UpdateField("2.004", "Doe"); // Known field
+        transaction.Records.Add(type2);
+
+        var editor = new NistTransactionEditor(transaction);
+
+        // Act - Edit unknown field and save
+        editor.SetFieldValue(type2, "2.003", "MODIFIED-VALUE");
+        var bytes = editor.SaveToBytes();
+
+        // Parse back
+        var parsed = NistTransactionParser.Parse(bytes);
+        var parsedType2 = parsed.GetRecords<Type2Record>().FirstOrDefault();
+
+        // Assert - Verify the edit was preserved
+        parsedType2.Should().NotBeNull();
+        parsedType2!.GetFieldValue("2.003").Should().Be("MODIFIED-VALUE");
+
+        // Verify no duplicates - field should exist in exactly one collection
+        var inFields = parsedType2.Fields.ContainsKey("2.003");
+        var inUnknownFields = parsedType2.UnknownFields.ContainsKey("2.003");
+        var totalCount = (inFields ? 1 : 0) + (inUnknownFields ? 1 : 0);
+        totalCount.Should().Be(1, "after round-trip, field 2.003 should exist in exactly one collection");
+
+        // The serialized and re-parsed file should not have duplicates in the raw bytes either
+        var bytesAsString = System.Text.Encoding.UTF8.GetString(bytes);
+        var occurrences = System.Text.RegularExpressions.Regex.Matches(bytesAsString, "2\\.003:").Count;
+        occurrences.Should().Be(1, "the serialized file should contain field 2.003 exactly once");
+    }
+
+    [Fact]
+    public void SetFieldValue_MultipleUnknownFields_ShouldNotCreateDuplicates()
+    {
+        // Arrange - Create record with multiple unknown fields
+        var transaction = CreateTestTransaction();
+        var type2 = new Type2Record { IDC = "01" };
+        type2.UpdateField("2.002", "01");
+        type2.SetUnknownField("2.003", "VALUE-A"); // Add to UnknownFields
+        type2.SetUnknownField("2.099", "VALUE-B"); // Add to UnknownFields
+        type2.SetUnknownField("2.100", "VALUE-C"); // Add to UnknownFields
+        transaction.Records.Add(type2);
+
+        var editor = new NistTransactionEditor(transaction);
+
+        // Act - Edit multiple unknown fields
+        editor.SetFieldValue(type2, "2.003", "MODIFIED-A");
+        editor.SetFieldValue(type2, "2.099", "MODIFIED-B");
+        editor.SetFieldValue(type2, "2.100", "MODIFIED-C");
+
+        // Assert - Verify values were updated
+        type2.GetFieldValue("2.003").Should().Be("MODIFIED-A");
+        type2.GetFieldValue("2.099").Should().Be("MODIFIED-B");
+        type2.GetFieldValue("2.100").Should().Be("MODIFIED-C");
+
+        // Verify all fields stayed in UnknownFields
+        type2.UnknownFields.Should().ContainKey("2.003");
+        type2.UnknownFields.Should().ContainKey("2.099");
+        type2.UnknownFields.Should().ContainKey("2.100");
+
+        // Verify fields were NOT moved to Fields
+        type2.Fields.Should().NotContainKey("2.003");
+        type2.Fields.Should().NotContainKey("2.099");
+        type2.Fields.Should().NotContainKey("2.100");
+
+        // Verify no duplicates across both collections
+        var totalFieldCount =
+            (type2.Fields.ContainsKey("2.003") ? 1 : 0) + (type2.UnknownFields.ContainsKey("2.003") ? 1 : 0) +
+            (type2.Fields.ContainsKey("2.099") ? 1 : 0) + (type2.UnknownFields.ContainsKey("2.099") ? 1 : 0) +
+            (type2.Fields.ContainsKey("2.100") ? 1 : 0) + (type2.UnknownFields.ContainsKey("2.100") ? 1 : 0);
+        totalFieldCount.Should().Be(3, "each field should exist in exactly one collection");
+    }
+
+    [Fact]
     public void CompleteEditWorkflow_ShouldWork()
     {
         // Arrange - Create initial transaction

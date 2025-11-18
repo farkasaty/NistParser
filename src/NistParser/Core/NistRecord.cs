@@ -57,12 +57,21 @@ namespace NistParser.Core
 
         /// <summary>
         /// Gets the value of a field as a string (first item of first subfield)
+        /// Checks both Fields (known fields) and UnknownFields collections
         /// </summary>
         /// <param name="fieldNumber">Field number (e.g., "1.002")</param>
         /// <returns>The field value, or null if not found</returns>
         public string? GetFieldValue(string fieldNumber)
         {
-            return GetField(fieldNumber)?.FirstValue;
+            // Check Fields first (known fields with metadata)
+            var field = GetField(fieldNumber);
+            if (field != null)
+            {
+                return field.FirstValue;
+            }
+
+            // Check UnknownFields (fields without metadata)
+            return GetUnknownField(fieldNumber);
         }
 
         /// <summary>
@@ -81,10 +90,20 @@ namespace NistParser.Core
         /// <param name="value">The new value</param>
         public void UpdateField(string fieldNumber, string value)
         {
+            // Check if this field exists in UnknownFields first
+            // Unknown fields are stored as simple string values
+            if (UnknownFields.ContainsKey(fieldNumber))
+            {
+                // Update the value directly in UnknownFields
+                UnknownFields[fieldNumber] = value;
+                return;
+            }
+
+            // Check if this field exists in Fields (known fields with metadata)
             var field = GetField(fieldNumber);
             if (field == null)
             {
-                // Create new field
+                // Create new field and add to Fields
                 field = new NistField(fieldNumber);
                 AddField(field);
             }
