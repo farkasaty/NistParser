@@ -61,22 +61,29 @@ namespace NistParser.Writing
             }
 
             // Build CNT field value
-            // Format: "1<US>record_count<RS>type_1<RS>idc_1<RS>type_2<RS>idc_2..."
+            // Format: "record_count<US>type_1<US>idc_1<RS>type_2<US>idc_2<RS>..."
             var sb = new StringBuilder();
 
             // First item: total count
             int totalRecords = transaction.Records.Count;
-            sb.Append("1");
-            sb.Append((char)SeparatorConstants.US);
             sb.Append(totalRecords);
 
             // Add each record type and IDC
+            // Use US to separate count from first type, and between type and IDC
+            // Use RS to separate record pairs
+            bool isFirst = true;
             foreach (var kvp in recordCounts.OrderBy(k => k.Key))
             {
                 int recordType = kvp.Key;
                 foreach (var idc in kvp.Value)
                 {
-                    sb.Append((char)SeparatorConstants.RS);
+                    if (!isFirst)
+                    {
+                        sb.Append((char)SeparatorConstants.RS);
+                    }
+                    isFirst = false;
+
+                    sb.Append((char)SeparatorConstants.US);
                     sb.Append(recordType);
                     sb.Append((char)SeparatorConstants.US);
                     sb.Append(idc);
@@ -168,14 +175,32 @@ namespace NistParser.Writing
             var lenFieldNumber = $"{(int)record.RecordType}.001";
             record.UpdateField(lenFieldNumber, recordLength.ToString());
 
-            // Write LEN field first
+            // Write LEN field first - create it if it doesn't exist (defensive programming)
             var lenField = record.GetField(lenFieldNumber);
-            if (lenField != null)
+            if (lenField == null)
             {
-                bool isLenOnlyField = fieldData.Count == 0 && !hasBinaryData;
-                var lenData = WriteField(lenField, hasBinaryData, isLenOnlyField);
-                recordStream.Write(lenData, 0, lenData.Length);
+                // Check if LEN field is in UnknownFields (this can happen for some record types)
+                var lenUnknownValue = record.GetUnknownField(lenFieldNumber);
+                if (lenUnknownValue != null)
+                {
+                    // Move it from UnknownFields to Fields
+                    lenField = new NistField(lenFieldNumber);
+                    lenField.SetValue(recordLength.ToString());
+                    record.AddField(lenField);
+                    record.RemoveUnknownField(lenFieldNumber);
+                }
+                else
+                {
+                    // Create new LEN field
+                    lenField = new NistField(lenFieldNumber);
+                    lenField.SetValue(recordLength.ToString());
+                    record.AddField(lenField);
+                }
             }
+
+            bool isLenOnlyField = fieldData.Count == 0 && !hasBinaryData;
+            var lenData = WriteField(lenField, hasBinaryData, isLenOnlyField);
+            recordStream.Write(lenData, 0, lenData.Length);
 
             // Write all other fields
             foreach (var data in fieldData)
@@ -207,8 +232,8 @@ namespace NistParser.Writing
                 totalLength += data.Length;
             }
 
-            // Add FS separator
-            totalLength += 1;
+            // Note: FS separator is NOT part of the record length per ANSI/NIST-ITL standard
+            // The FS is a separator between records, not part of the record itself
 
             // Re-calculate with actual LEN field size
             string lenValue = totalLength.ToString();

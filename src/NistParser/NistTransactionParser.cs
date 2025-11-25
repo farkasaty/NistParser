@@ -210,11 +210,24 @@ namespace NistParser
                 return content;
             }
 
-            // First subfield contains the record count
+            // First subfield contains: record_count<US>record_type<US>IDC
+            // The count is the first item, followed by the first record type/IDC pair
             var firstSubfield = cntField.Subfields[0];
             if (firstSubfield.Items.Count > 0 && int.TryParse(firstSubfield.Items[0], out int count))
             {
                 content.RecordCount = count;
+            }
+
+            // Parse first record type/IDC pair from first subfield (items 1 and 2)
+            if (firstSubfield.Items.Count >= 3 &&
+                int.TryParse(firstSubfield.Items[1], out int firstRecordType))
+            {
+                string firstIdc = firstSubfield.Items[2];
+                content.Records.Add(new TransactionContent.RecordEntry
+                {
+                    RecordType = firstRecordType,
+                    IDC = firstIdc
+                });
             }
 
             // Subsequent subfields contain record type and IDC pairs
