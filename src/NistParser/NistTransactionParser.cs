@@ -323,19 +323,9 @@ namespace NistParser
 
                 var field = FieldParser.ParseTaggedField(fieldData);
 
-                // Check if this field has metadata definition
-                var metadata = Editing.FieldMetadataProvider.GetFieldMetadata(field.FieldNumber);
-
-                if (metadata != null)
-                {
-                    // Field is defined - add to normal Fields collection
-                    record.AddField(field);
-                }
-                else
-                {
-                    // Field is not defined - add to UnknownFields as string
-                    record.SetUnknownField(field.FieldNumber, field.FirstValue ?? string.Empty);
-                }
+                // Add ALL fields to the Fields collection, regardless of whether they have metadata
+                // This preserves the full subfield/item structure for all fields, including unknown ones
+                record.AddField(field);
             }
 
             // Extract record length and IDC

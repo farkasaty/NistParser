@@ -6,6 +6,7 @@ using System.Text;
 using NistParser.Constants;
 using NistParser.Core;
 using NistParser.Records;
+using NistParser.Utilities;
 
 namespace NistParser.Writing
 {
@@ -60,38 +61,57 @@ namespace NistParser.Writing
                 recordCounts[recordType].Add(record.IDC);
             }
 
-            // Build CNT field value
-            // Format: "record_count<US>type_1<US>idc_1<RS>type_2<US>idc_2<RS>..."
-            var sb = new StringBuilder();
+            // Build CNT field structure
+            // Format: record_count<US>type_1<US>idc_1<RS>type_2<US>idc_2<RS>...
+            // This means:
+            //   Subfield[0]: count, type_1, idc_1 (3 items separated by US)
+            //   Subfield[1]: type_2, idc_2 (2 items separated by US)
+            //   etc.
 
-            // First item: total count
             int totalRecords = transaction.Records.Count;
-            sb.Append(totalRecords);
 
-            // Add each record type and IDC
-            // Use US to separate count from first type, and between type and IDC
-            // Use RS to separate record pairs
-            bool isFirst = true;
-            foreach (var kvp in recordCounts.OrderBy(k => k.Key))
+            // Get or create the CNT field
+            var cntField = transaction.Header.GetField("1.003");
+            if (cntField == null)
             {
-                int recordType = kvp.Key;
-                foreach (var idc in kvp.Value)
-                {
-                    if (!isFirst)
-                    {
-                        sb.Append((char)SeparatorConstants.RS);
-                    }
-                    isFirst = false;
-
-                    sb.Append((char)SeparatorConstants.US);
-                    sb.Append(recordType);
-                    sb.Append((char)SeparatorConstants.US);
-                    sb.Append(idc);
-                }
+                cntField = new NistField("1.003");
+                transaction.Header.AddField(cntField);
             }
 
-            // Update the CNT field in Type-1 record
-            transaction.Header.UpdateField("1.003", sb.ToString());
+            // Clear existing subfields
+            cntField.Subfields.Clear();
+
+            // Build subfields properly
+            var allRecordPairs = recordCounts
+                .OrderBy(k => k.Key)
+                .SelectMany(kvp => kvp.Value.Select(idc => new { RecordType = kvp.Key, IDC = idc }))
+                .ToList();
+
+            if (allRecordPairs.Count > 0)
+            {
+                // First subfield: count + first record type + first IDC
+                var firstSubfield = new NistSubfield();
+                firstSubfield.Items.Add(totalRecords.ToString());
+                firstSubfield.Items.Add(allRecordPairs[0].RecordType.ToString());
+                firstSubfield.Items.Add(allRecordPairs[0].IDC);
+                cntField.Subfields.Add(firstSubfield);
+
+                // Remaining subfields: record type + IDC
+                for (int i = 1; i < allRecordPairs.Count; i++)
+                {
+                    var subfield = new NistSubfield();
+                    subfield.Items.Add(allRecordPairs[i].RecordType.ToString());
+                    subfield.Items.Add(allRecordPairs[i].IDC);
+                    cntField.Subfields.Add(subfield);
+                }
+            }
+            else
+            {
+                // No records - just the count
+                var subfield = new NistSubfield();
+                subfield.Items.Add(totalRecords.ToString());
+                cntField.Subfields.Add(subfield);
+            }
 
             // Also update the TransactionContent property
             transaction.Header.Content = new TransactionContent
@@ -129,10 +149,6 @@ namespace NistParser.Writing
             .OrderBy(ParseFieldNumber)
             .ToList();
 
-            // Combine all field numbers to determine which is last
-            var allFieldNumbers = new List<string>(fieldNumbers);
-            allFieldNumbers.AddRange(unknownFieldNumbers);
-
             // Write each field (we'll write LEN field first after calculating)
             var fieldData = new List<byte[]>();
 
@@ -149,16 +165,20 @@ namespace NistParser.Writing
                 }
             }
 
-            // Write unknown fields as simple text fields
+            // Write unknown fields
+            // Parse the string value to preserve any separator characters (US/RS) as structure
             for (int i = 0; i < unknownFieldNumbers.Count; i++)
             {
                 var fieldNumber = unknownFieldNumbers[i];
                 var value = record.GetUnknownField(fieldNumber);
                 if (value != null)
                 {
-                    // Create a temporary NistField for writing
+                    // Create a NistField and parse the value to preserve separators as structure
                     var tempField = new NistField(fieldNumber);
-                    tempField.SetValue(value);
+
+                    // Parse the value string as field data to preserve US/RS separator structure
+                    var valueBytes = Encoding.UTF8.GetBytes(value);
+                    tempField.Subfields = FieldParser.ParseFieldData(valueBytes);
 
                     // Check if this is the last non-binary field
                     bool isLastField = (i == unknownFieldNumbers.Count - 1) && !hasBinaryData;
@@ -179,23 +199,10 @@ namespace NistParser.Writing
             var lenField = record.GetField(lenFieldNumber);
             if (lenField == null)
             {
-                // Check if LEN field is in UnknownFields (this can happen for some record types)
-                var lenUnknownValue = record.GetUnknownField(lenFieldNumber);
-                if (lenUnknownValue != null)
-                {
-                    // Move it from UnknownFields to Fields
-                    lenField = new NistField(lenFieldNumber);
-                    lenField.SetValue(recordLength.ToString());
-                    record.AddField(lenField);
-                    record.RemoveUnknownField(lenFieldNumber);
-                }
-                else
-                {
-                    // Create new LEN field
-                    lenField = new NistField(lenFieldNumber);
-                    lenField.SetValue(recordLength.ToString());
-                    record.AddField(lenField);
-                }
+                // Create new LEN field
+                lenField = new NistField(lenFieldNumber);
+                lenField.SetValue(recordLength.ToString());
+                record.AddField(lenField);
             }
 
             bool isLenOnlyField = fieldData.Count == 0 && !hasBinaryData;
