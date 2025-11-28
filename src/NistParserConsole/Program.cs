@@ -2,11 +2,15 @@
 using NistParser.Editing;
 using System.Net.WebSockets;
 
+
+Console.WriteLine("DEBUG: Start");
+Console.Out.Flush();
 WriteInColor("=========== APPLICATION START ===========", ConsoleColor.Yellow);
 
 //UpdateExistingUnknownField();
 //ReadFileWithDuplicatUnknownField();
 Type9Test();
+//ReproductionTest();
 
 void WriteInColor(string message, ConsoleColor color)
 {
@@ -130,3 +134,39 @@ void Type9Test()
 	WriteInColor("=========== APPLICATION END ===========", ConsoleColor.Yellow);
 }
 
+
+void ReproductionTest()
+{
+	WriteInColor($"{nameof(ReproductionTest)}", ConsoleColor.DarkGray);
+
+	var fileName = "orig_SIS_MMS_C_P25M.nist";
+	var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+
+	Console.WriteLine($"Loading nist file: {filePath}");
+	var editor = NistTransactionEditor.FromFile(filePath);
+    
+    var cntField = editor.Transaction.Header.GetField("1.003");
+    Console.WriteLine($"Original 1.003: {cntField.ToString()}");
+    
+    // Print subfields details
+    foreach(var sub in cntField.Subfields)
+    {
+        Console.WriteLine($"  Subfield: {string.Join(" | ", sub.Items)}");
+    }
+
+	var modifiedFileName = "repro.nist";
+	var modifiedFilePath = Path.Combine(Directory.GetCurrentDirectory(), modifiedFileName);
+	Console.WriteLine($"Saving as: {modifiedFilePath}");
+	editor.SaveToFile(modifiedFilePath);
+    
+    // Reload to check
+    var editor2 = NistTransactionEditor.FromFile(modifiedFilePath);
+    var cntField2 = editor2.Transaction.Header.GetField("1.003");
+    Console.WriteLine($"Saved 1.003:    {cntField2.ToString()}");
+     foreach(var sub in cntField2.Subfields)
+    {
+        Console.WriteLine($"  Subfield: {string.Join(" | ", sub.Items)}");
+    }
+
+	WriteInColor("Reproduction test finished", ConsoleColor.Yellow);
+}

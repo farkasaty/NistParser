@@ -87,29 +87,19 @@ namespace NistParser.Writing
                 .SelectMany(kvp => kvp.Value.Select(idc => new { RecordType = kvp.Key, IDC = idc }))
                 .ToList();
 
-            if (allRecordPairs.Count > 0)
-            {
-                // First subfield: count + first record type + first IDC
-                var firstSubfield = new NistSubfield();
-                firstSubfield.Items.Add(totalRecords.ToString());
-                firstSubfield.Items.Add(allRecordPairs[0].RecordType.ToString());
-                firstSubfield.Items.Add(allRecordPairs[0].IDC);
-                cntField.Subfields.Add(firstSubfield);
+            // First subfield: FRC (1) + CRC (count)
+            var firstSubfield = new NistSubfield();
+            firstSubfield.Items.Add("1"); // FRC is always 1
+            firstSubfield.Items.Add(totalRecords.ToString()); // CRC
+            cntField.Subfields.Add(firstSubfield);
 
-                // Remaining subfields: record type + IDC
-                for (int i = 1; i < allRecordPairs.Count; i++)
-                {
-                    var subfield = new NistSubfield();
-                    subfield.Items.Add(allRecordPairs[i].RecordType.ToString());
-                    subfield.Items.Add(allRecordPairs[i].IDC);
-                    cntField.Subfields.Add(subfield);
-                }
-            }
-            else
+            // Remaining subfields: record type + IDC
+            foreach (var pair in allRecordPairs)
             {
-                // No records - just the count
                 var subfield = new NistSubfield();
-                subfield.Items.Add(totalRecords.ToString());
+                subfield.Items.Add(pair.RecordType.ToString());
+                // Ensure IDC is 2 digits (e.g., "0" -> "00")
+                subfield.Items.Add(pair.IDC.PadLeft(2, '0'));
                 cntField.Subfields.Add(subfield);
             }
 
@@ -239,8 +229,9 @@ namespace NistParser.Writing
                 totalLength += data.Length;
             }
 
-            // Note: FS separator is NOT part of the record length per ANSI/NIST-ITL standard
-            // The FS is a separator between records, not part of the record itself
+            // Note: FS separator IS part of the record length per ANSI/NIST-ITL standard
+            // The FS is a separator between records, but it is included in the length of the record it terminates
+            totalLength += 1;
 
             // Re-calculate with actual LEN field size
             string lenValue = totalLength.ToString();

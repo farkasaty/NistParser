@@ -210,34 +210,33 @@ namespace NistParser
                 return content;
             }
 
-            // First subfield contains: record_count<US>record_type<US>IDC
-            // The count is the first item, followed by the first record type/IDC pair
+            // First subfield contains: FRC<US>CRC
+            // FRC (First Record Category code) is "1"
+            // CRC (Content Record Count) is the number of records (Type-2 to Type-99)
             var firstSubfield = cntField.Subfields[0];
-            if (firstSubfield.Items.Count > 0 && int.TryParse(firstSubfield.Items[0], out int count))
+            
+            // Try to parse CRC (second item)
+            if (firstSubfield.Items.Count >= 2 && int.TryParse(firstSubfield.Items[1], out int count))
             {
                 content.RecordCount = count;
             }
-
-            // Parse first record type/IDC pair from first subfield (items 1 and 2)
-            if (firstSubfield.Items.Count >= 3 &&
-                int.TryParse(firstSubfield.Items[1], out int firstRecordType))
+            else if (firstSubfield.Items.Count == 1 && int.TryParse(firstSubfield.Items[0], out int singleCount))
             {
-                string firstIdc = firstSubfield.Items[2];
-                content.Records.Add(new TransactionContent.RecordEntry
-                {
-                    RecordType = firstRecordType,
-                    IDC = firstIdc
-                });
+                // Fallback for non-standard files that might just have the count
+                content.RecordCount = singleCount;
             }
 
             // Subsequent subfields contain record type and IDC pairs
+            // Start from index 1 (second subfield)
             for (int i = 1; i < cntField.Subfields.Count; i++)
             {
                 var subfield = cntField.Subfields[i];
-                if (subfield.Items.Count >= 2 &&
-                int.TryParse(subfield.Items[0], out int recordType))
+                if (subfield.Items.Count >= 1 &&
+                    int.TryParse(subfield.Items[0], out int recordType))
                 {
-                    string idc = subfield.Items[1];
+                    // IDC is the second item, default to "00" if missing
+                    string idc = subfield.Items.Count >= 2 ? subfield.Items[1] : "00";
+                    
                     content.Records.Add(new TransactionContent.RecordEntry
                     {
                         RecordType = recordType,
