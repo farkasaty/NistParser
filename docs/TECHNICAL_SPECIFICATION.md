@@ -324,8 +324,16 @@ Value Interpretation: "Right thumb (1)"
 
 **Format**:
 ```
-1.003:record_count<US>record_type<US>IDC<RS>record_type<US>IDC<RS>...<GS>
+1.003:1<US>record_count<RS>record_type<US>IDC<RS>record_type<US>IDC<RS>...<GS>
 ```
+
+**Structure**:
+- **First Subfield**:
+  - Item 1: **FRC** (First Record Category code) - Always "1" (indicating Type-1 record)
+  - Item 2: **CRC** (Content Record Count) - Number of records following Type-1
+- **Subsequent Subfields** (one per record):
+  - Item 1: **REC** (Record Type)
+  - Item 2: **IDC** (Information Designation Character)
 
 **Example**:
 ```
@@ -333,12 +341,10 @@ Value Interpretation: "Right thumb (1)"
 ```
 
 Interpretation:
-- Total count: 1 (number of records after Type-1)
+- First Subfield: FRC="1", CRC="3" (3 records follow)
 - Record Type 2, IDC 00
 - Record Type 9, IDC 00
 - Record Type 13, IDC 00
-
-**Note**: The first information item is a count of the subsequent record entries (not including Type-1 itself)
 
 ### 7.4 Information Designation Character (IDC)
 
