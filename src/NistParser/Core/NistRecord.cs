@@ -48,11 +48,13 @@ namespace NistParser.Core
         /// <summary>
         /// Gets a field by field number
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "1.003")</param>
+        /// <param name="fieldNumber">Field number (e.g., "1.003", "1.01", or "1.1")</param>
         /// <returns>The field if found, null otherwise</returns>
         public NistField? GetField(string fieldNumber)
         {
-            return Fields.TryGetValue(fieldNumber, out var field) ? field : null;
+            // Normalize field number for consistent lookup
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            return Fields.TryGetValue(normalized, out var field) ? field : null;
         }
 
         /// <summary>
@@ -86,25 +88,29 @@ namespace NistParser.Core
         /// <summary>
         /// Updates a field value (or adds it if it doesn't exist)
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "1.002")</param>
+        /// <param name="fieldNumber">Field number (e.g., "1.002", "1.01", or "1.1")</param>
         /// <param name="value">The new value</param>
         public void UpdateField(string fieldNumber, string value)
         {
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+
             // Check if this field exists in UnknownFields first
             // Unknown fields are stored as simple string values
-            if (UnknownFields.ContainsKey(fieldNumber))
+            if (UnknownFields.ContainsKey(normalized))
             {
                 // Update the value directly in UnknownFields
-                UnknownFields[fieldNumber] = value;
+                UnknownFields[normalized] = value;
                 return;
             }
 
             // Check if this field exists in Fields (known fields with metadata)
-            var field = GetField(fieldNumber);
+            var field = GetField(normalized);
             if (field == null)
             {
                 // Create new field and add to Fields
-                field = new NistField(fieldNumber);
+                // NistField constructor will normalize the field number
+                field = new NistField(normalized);
                 AddField(field);
             }
 
@@ -114,51 +120,61 @@ namespace NistParser.Core
         /// <summary>
         /// Removes a field from this record
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "1.003")</param>
+        /// <param name="fieldNumber">Field number (e.g., "1.003", "1.01", or "1.1")</param>
         /// <returns>True if the field was removed, false if it didn't exist</returns>
         public bool RemoveField(string fieldNumber)
         {
-            return Fields.Remove(fieldNumber);
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            return Fields.Remove(normalized);
         }
 
         /// <summary>
         /// Checks if a field exists in this record
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "1.003")</param>
+        /// <param name="fieldNumber">Field number (e.g., "1.003", "1.01", or "1.1")</param>
         /// <returns>True if the field exists</returns>
         public bool HasField(string fieldNumber)
         {
-            return Fields.ContainsKey(fieldNumber);
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            return Fields.ContainsKey(normalized);
         }
 
         /// <summary>
         /// Gets an unknown field value by field number
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+        /// <param name="fieldNumber">Field number (e.g., "2.999", "2.99", or "2.9")</param>
         /// <returns>The field value, or null if not found</returns>
         public string? GetUnknownField(string fieldNumber)
         {
-            return UnknownFields.TryGetValue(fieldNumber, out var value) ? value : null;
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            return UnknownFields.TryGetValue(normalized, out var value) ? value : null;
         }
 
         /// <summary>
         /// Sets an unknown field value (or adds it if it doesn't exist)
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+        /// <param name="fieldNumber">Field number (e.g., "2.999", "2.99", or "2.9")</param>
         /// <param name="value">The field value</param>
         public void SetUnknownField(string fieldNumber, string value)
         {
-            UnknownFields[fieldNumber] = value;
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            UnknownFields[normalized] = value;
         }
 
         /// <summary>
         /// Removes an unknown field
         /// </summary>
-        /// <param name="fieldNumber">Field number (e.g., "2.999")</param>
+        /// <param name="fieldNumber">Field number (e.g., "2.999", "2.99", or "2.9")</param>
         /// <returns>True if the field was removed, false if it didn't exist</returns>
         public bool RemoveUnknownField(string fieldNumber)
         {
-            return UnknownFields.Remove(fieldNumber);
+            // Normalize field number for consistent operations
+            string normalized = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            return UnknownFields.Remove(normalized);
         }
 
         /// <summary>

@@ -83,46 +83,136 @@ namespace NistParser.Writing
             // Add record category code (Type-1 indicator)
             element.Add(new XElement(biom + "RecordCategoryCode", "1"));
 
-            // Add common fields as XML elements
-            AddFieldAsElement(element, record, "1.002", itl + "Transaction", itl + "TransactionVersion");
-            AddFieldAsElement(element, record, "1.004", itl + "Transaction", itl + "TransactionCategoryCode");
-            AddFieldAsElement(element, record, "1.005", itl + "Transaction", itl + "TransactionDate");
-            AddFieldAsElement(element, record, "1.006", itl + "Transaction", itl + "TransactionPriorityCode");
+            // Create the biom:Transaction container
+            var transaction = new XElement(biom + "Transaction");
 
-            // Destination and Originating Agency
-            AddFieldAsElement(element, record, "1.007", itl + "Transaction", itl + "DestinationAgencyIdentifier");
-            AddFieldAsElement(element, record, "1.008", itl + "Transaction", itl + "OriginatingAgencyIdentifier");
-            AddFieldAsElement(element, record, "1.009", itl + "Transaction", itl + "TransactionControlNumber");
+            // Field 1.002 - Version (split into major and minor)
+            var versionField = record.GetField("1.002");
+            if (versionField?.FirstValue != null && versionField.FirstValue.Length == 4)
+            {
+                string major = versionField.FirstValue.Substring(0, 2);
+                string minor = versionField.FirstValue.Substring(2, 2);
+                transaction.Add(new XElement(biom + "TransactionMajorVersionValue", major));
+                transaction.Add(new XElement(biom + "TransactionMinorVersionValue", minor));
+            }
 
-            // Optional fields
-            AddFieldAsElement(element, record, "1.011", itl + "Transaction", itl + "NativeScanningResolution");
-            AddFieldAsElement(element, record, "1.012", itl + "Transaction", itl + "NominalTransmittingResolution");
-            AddFieldAsElement(element, record, "1.013", itl + "Transaction", itl + "DomainName");
-            AddFieldAsElement(element, record, "1.017", itl + "Transaction", itl + "OriginatingAgencyName");
+            // Field 1.004 - Type of Transaction (TOT)
+            var totField = record.GetField("1.004");
+            if (totField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionCategoryCode", totField.FirstValue));
+            }
 
-            // Add CNT field as TransactionContentSummary
+            // Field 1.005 - Date (DAT) - convert from YYYYMMDD to YYYY-MM-DD
+            var dateField = record.GetField("1.005");
+            if (dateField?.FirstValue != null && dateField.FirstValue.Length == 8)
+            {
+                string isoDate = $"{dateField.FirstValue.Substring(0, 4)}-{dateField.FirstValue.Substring(4, 2)}-{dateField.FirstValue.Substring(6, 2)}";
+                transaction.Add(new XElement(biom + "TransactionDate",
+                    new XElement(nc + "Date", isoDate)));
+            }
+
+            // Field 1.006 - Priority (PRY)
+            var priorityField = record.GetField("1.006");
+            if (priorityField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionPriorityValue", priorityField.FirstValue));
+            }
+
+            // Field 1.007 - Destination Agency Identifier (DAI)
+            var daiField = record.GetField("1.007");
+            if (daiField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionDestinationOrganization",
+                    new XElement(nc + "OrganizationIdentification",
+                        new XElement(nc + "IdentificationID", daiField.FirstValue))));
+            }
+
+            // Field 1.008 - Originating Agency Identifier (ORI)
+            var oriField = record.GetField("1.008");
+            var oanField = record.GetField("1.017"); // Originating Agency Name
+            if (oriField?.FirstValue != null || oanField?.FirstValue != null)
+            {
+                var origOrg = new XElement(biom + "TransactionOriginatingOrganization");
+
+                if (oriField?.FirstValue != null)
+                {
+                    origOrg.Add(new XElement(nc + "OrganizationIdentification",
+                        new XElement(nc + "IdentificationID", oriField.FirstValue)));
+                }
+
+                if (oanField?.FirstValue != null)
+                {
+                    origOrg.Add(new XElement(nc + "OrganizationName", oanField.FirstValue));
+                }
+
+                transaction.Add(origOrg);
+            }
+
+            // Field 1.009 - Transaction Control Number (TCN)
+            var tcnField = record.GetField("1.009");
+            if (tcnField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionControlIdentification",
+                    new XElement(nc + "IdentificationID", tcnField.FirstValue)));
+            }
+
+            // Field 1.010 - Transaction Control Reference (TCR)
+            var tcrField = record.GetField("1.010");
+            if (tcrField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionControlReferenceIdentification",
+                    new XElement(nc + "IdentificationID", tcrField.FirstValue)));
+            }
+
+            // Field 1.011/1.012 - Resolution details
+            var nsrField = record.GetField("1.011");
+            var ntrField = record.GetField("1.012");
+            if (nsrField?.FirstValue != null || ntrField?.FirstValue != null)
+            {
+                var resolutionDetails = new XElement(biom + "TransactionImageResolutionDetails");
+
+                if (nsrField?.FirstValue != null)
+                {
+                    resolutionDetails.Add(new XElement(biom + "NativeScanningResolutionValue", nsrField.FirstValue));
+                }
+
+                if (ntrField?.FirstValue != null)
+                {
+                    resolutionDetails.Add(new XElement(biom + "NominalTransmittingResolutionValue", ntrField.FirstValue));
+                }
+
+                transaction.Add(resolutionDetails);
+            }
+
+            // Field 1.013 - Domain Name (DOM)
+            var domField = record.GetField("1.013");
+            if (domField?.FirstValue != null)
+            {
+                transaction.Add(new XElement(biom + "TransactionDomain",
+                    new XElement(biom + "DomainVersionNumberIdentification",
+                        new XElement(nc + "IdentificationID", domField.FirstValue))));
+            }
+
+            // Field 1.003 - Transaction Content (CNT)
             if (record.Content != null)
             {
-                var contentElement = new XElement(itl + "Transaction",
-                new XElement(itl + "TransactionContentSummary",
-                new XElement(itl + "ContentRecordCount", record.Content.RecordCount)
-                )
-                );
+                var contentSummary = new XElement(biom + "TransactionContentSummary",
+                    new XElement(biom + "ContentRecordCount", record.Content.RecordCount));
 
                 foreach (var entry in record.Content.Records)
                 {
-                    contentElement.Element(itl + "TransactionContentSummary")?.Add(
-                    new XElement(itl + "ContentRecordSummary",
-                    new XElement(itl + "RecordCategoryCode", entry.RecordType),
-                    new XElement(biom + "ImageReferenceIdentification",
-                    new XElement(nc + "IdentificationID", entry.IDC)
-                    )
-                    )
-                    );
+                    contentSummary.Add(new XElement(biom + "ContentRecordSummary",
+                        new XElement(itl + "RecordCategoryCode", entry.RecordType),
+                        new XElement(biom + "ImageReferenceIdentification",
+                            new XElement(nc + "IdentificationID", entry.IDC))));
                 }
 
-                element.Add(contentElement);
+                transaction.Add(contentSummary);
             }
+
+            // Add the Transaction element to the PackageInformationRecord
+            element.Add(transaction);
 
             return element;
         }

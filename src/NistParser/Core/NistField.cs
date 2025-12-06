@@ -84,11 +84,13 @@ namespace NistParser.Core
         /// <summary>
         /// Initializes a new instance of the NistField class with a field number
         /// </summary>
-        /// <param name="fieldNumber">The complete field identifier (e.g., "1.003")</param>
+        /// <param name="fieldNumber">The complete field identifier (e.g., "1.003", "1.01", or "1.1")</param>
         public NistField(string fieldNumber)
         {
-            FieldNumber = fieldNumber;
-            ParseFieldNumber(fieldNumber);
+            // Normalize field number to standard format (minimum 3 digits)
+            // This ensures consistent dictionary keys and output format
+            FieldNumber = Utilities.FieldNumberFormatter.Normalize(fieldNumber);
+            ParseFieldNumber(FieldNumber);
         }
 
         /// <summary>

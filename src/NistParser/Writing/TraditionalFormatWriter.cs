@@ -99,7 +99,7 @@ namespace NistParser.Writing
                 var subfield = new NistSubfield();
                 subfield.Items.Add(pair.RecordType.ToString());
                 // Ensure IDC is 2 digits (e.g., "0" -> "00")
-                subfield.Items.Add(pair.IDC.PadLeft(2, '0'));
+                subfield.Items.Add(pair.IDC);
                 cntField.Subfields.Add(subfield);
             }
 

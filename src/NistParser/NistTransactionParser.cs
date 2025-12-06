@@ -131,13 +131,38 @@ namespace NistParser
         /// <returns>Type-1 record data, or null if not found</returns>
         private static byte[]? ExtractType1Record(byte[] fileData, ref int position)
         {
-            // Type-1 record should start with "1.001:"
-            string header = Encoding.ASCII.GetString(fileData, 0, Math.Min(6, fileData.Length));
-            if (!header.StartsWith("1.001:"))
+            // Type-1 record can start with "1.001:", "1.01:", or "1.1:" (all are equivalent)
+            // Read enough bytes to capture various field number formats
+            int minLength = Math.Min(10, fileData.Length);
+            string header = Encoding.ASCII.GetString(fileData, 0, minLength);
+
+            // Check if it starts with "1." (Type-1 record indicator)
+            if (!header.StartsWith("1."))
             {
                 return null;
             }
 
+            // Find the colon to extract the field number
+            int colonIndex = header.IndexOf(':');
+            if (colonIndex == -1)
+            {
+                return null;
+            }
+
+            // Extract and validate the field number
+            string fieldNumber = header.Substring(0, colonIndex);
+            if (!Utilities.FieldNumberFormatter.IsValid(fieldNumber))
+            {
+                return null;
+            }
+
+            // Check if this normalizes to "1.001" (the Type-1 LEN field)
+            if (!Utilities.FieldNumberFormatter.AreEquivalent(fieldNumber, "1.001"))
+            {
+                return null;
+            }
+
+            // Valid Type-1 record start found
             // Find the FS (File Separator) that terminates the Type-1 record
             int fsIndex = Array.IndexOf(fileData, SeparatorConstants.FS, position);
             if (fsIndex == -1)
@@ -177,7 +202,8 @@ namespace NistParser
                 record.AddField(field);
 
                 // Special handling for field 1.003 (Transaction Content / CNT)
-                if (field.FieldNumber == "1.003")
+                // Use AreEquivalent for future-proof comparison
+                if (Utilities.FieldNumberFormatter.AreEquivalent(field.FieldNumber, "1.003"))
                 {
                     record.Content = ParseTransactionContent(field);
                 }
