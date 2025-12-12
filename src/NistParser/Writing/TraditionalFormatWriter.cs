@@ -14,7 +14,7 @@ namespace NistParser.Writing
     /// <summary>
     /// Writes NIST transactions in Traditional binary format (ANSI/NIST-ITL)
     /// </summary>
-    internal static class TraditionalFormatWriter
+    public static class TraditionalFormatWriter
     {
         /// <summary>
         /// Writes a NistTransaction to Traditional binary format
@@ -220,29 +220,39 @@ namespace NistParser.Writing
         {
             // Start with LEN field itself
             var lenFieldNumber = $"{(int)record.RecordType}.001";
-            int estimatedLenFieldSize = lenFieldNumber.Length + 1 + 10 + 1; // field_num + : + length_value + GS
+            
+            // Check if LEN field will have a GS separator
+            bool isLenOnlyField = fieldData.Count == 0 && !hasBinaryData;
+            int gsSize = isLenOnlyField ? 0 : 1;
 
-            // Add all field data
-            int totalLength = estimatedLenFieldSize;
+            // Calculate payload length (all fields + FS)
+            int payloadLength = 1; // Start with FS separator
             foreach (var data in fieldData)
             {
-                totalLength += data.Length;
+                payloadLength += data.Length;
             }
 
-            // Note: FS separator IS part of the record length per ANSI/NIST-ITL standard
-            // The FS is a separator between records, but it is included in the length of the record it terminates
-            totalLength += 1;
-
-            // Re-calculate with actual LEN field size
-            string lenValue = totalLength.ToString();
-            int actualLenFieldSize = lenFieldNumber.Length + 1 + lenValue.Length + 1;
-
-            // Adjust if our estimate was wrong
-            if (actualLenFieldSize != estimatedLenFieldSize)
+            // Iteratively calculate total length until stable
+            // Initial guess using current payload length
+            int totalLength = payloadLength + lenFieldNumber.Length + 1 + payloadLength.ToString().Length + gsSize;
+            
+            // Max iterations to prevent infinite loop (though unlikely)
+            for (int i = 0; i < 5; i++)
             {
-                totalLength = totalLength - estimatedLenFieldSize + actualLenFieldSize;
+                string lenValue = totalLength.ToString();
+                int currentLenFieldSize = lenFieldNumber.Length + 1 + lenValue.Length + gsSize; // field_num + : + length_value + GS
+                
+                int newTotalLength = payloadLength + currentLenFieldSize;
+                
+                if (newTotalLength == totalLength)
+                {
+                    return totalLength;
+                }
+                
+                totalLength = newTotalLength;
             }
 
+            // Fallback (should ideally not be reached)
             return totalLength;
         }
 

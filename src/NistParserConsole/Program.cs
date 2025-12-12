@@ -9,7 +9,7 @@ WriteInColor("=========== APPLICATION START ===========", ConsoleColor.Yellow);
 
 //UpdateExistingUnknownField();
 //ReadFileWithDuplicatUnknownField();
-Type9Test();
+Test();
 //ReproductionTest();
 
 void WriteInColor(string message, ConsoleColor color)
@@ -75,27 +75,28 @@ void ReadFileWithDuplicatUnknownField()
 	Console.WriteLine($" {field.FieldNumber} = {field.FirstValue}");
 }
 
-void Type9Test()
+void Test()
 {
-	WriteInColor($"{nameof(Type9Test)}", ConsoleColor.DarkGray);
+	WriteInColor($"{nameof(Test)}", ConsoleColor.DarkGray);
 
-	var fileName = "orig_SIS_MMS_C_P25M.nist";
-	var filePath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+	var baseDir = @"c:\Users\farka\source\repos\NistParser\example files\hibas\20251210135521\";
+	var fileName = "orig_CND_CPS220165568472.nist";
+	var filePath = Path.Combine(baseDir, fileName);
 
 	Console.WriteLine($"Loading nist file: {filePath}");
 
 	Dictionary<string, string> probeType_1Attributes = new Dictionary<string, string>
 	{
-		{ "1.004", "YYY" },
-		{ "1.005", "20251113" },
-		{ "1.007", "EU/SISII-AFIS-MOD" },
-		{ "1.008", "BE/TEST/MOD" },
-		{ "1.009", "2000000366Q" },
+		{ "1.004", "MID" },
+		{ "1.005", "20251212" },
+		{ "1.007", "HU/AFIS" },
+		{ "1.008", "SIRENE" },
+		{ "1.009", "1234567890123456" },
 	};
 	Dictionary<string, string> type_2Attributes = new Dictionary<string, string>
 	{
-		{ "2.003", "0101" },
-		{ "2.007", "CS/2019/28302-2" },
+		{ "2.003", "VIES" },
+		{ "2.007", "1234567890123456789012345678901234567890" },
 	};
 
 	var editor = NistTransactionEditor.FromFile(filePath);
@@ -127,7 +128,7 @@ void Type9Test()
 	WriteInColor("Validation was successful for type2 record!", ConsoleColor.Green);
 
 	var modifiedFileName = $"{Path.GetFileNameWithoutExtension(fileName)}_modified.nist";
-	var modifiedFilePath = Path.Combine(Directory.GetCurrentDirectory(), modifiedFileName);
+	var modifiedFilePath = Path.Combine(baseDir, modifiedFileName);
 	Console.WriteLine($"Saving as: {modifiedFilePath}");
 	editor.SaveToFile(modifiedFilePath);
 
