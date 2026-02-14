@@ -1,6 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
+using NistParser.Constants;
+using NistParser.Models;
 using NistParser.Records;
+using NistParser.Utilities;
 
 namespace NistParser.Core
 {
@@ -76,6 +79,32 @@ namespace NistParser.Core
         {
             return Records.OfType<T>().FirstOrDefault(r => r.IDC == idc);
         }
+
+        // === KÉPKINYERÉS ===
+
+        /// <summary>
+        /// Kinyeri az összes biometrikus képet a tranzakcióból, metaadatokkal együtt.
+        /// Támogatott rekordtípusok: Type-4, Type-8, Type-10, Type-13, Type-14, Type-15, Type-17, Type-19, stb.
+        /// </summary>
+        /// <returns>Az összes kinyert BiometricImage objektum</returns>
+        public IEnumerable<BiometricImage> GetAllImages()
+            => ImageExtractor.ExtractAllImages(this);
+
+        /// <summary>
+        /// Kinyeri a megadott típusú képeket a tranzakcióból.
+        /// </summary>
+        /// <param name="imageType">A kívánt képtípus (pl. Fingerprint, Face, PalmPrint)</param>
+        /// <returns>A megadott típusú képek listája</returns>
+        public IEnumerable<BiometricImage> GetImages(BiometricImageType imageType)
+            => ImageExtractor.ExtractImages(this, imageType);
+
+        /// <summary>
+        /// Kinyeri a megadott IDC-hez (Information Designation Character) tartozó képeket.
+        /// </summary>
+        /// <param name="idc">Az IDC érték (pl. "00", "01")</param>
+        /// <returns>Az adott IDC-hez tartozó képek</returns>
+        public IEnumerable<BiometricImage> GetImagesByIDC(string idc)
+            => ImageExtractor.ExtractImagesByIDC(this, idc);
 
         /// <summary>
         /// Returns a summary of the transaction

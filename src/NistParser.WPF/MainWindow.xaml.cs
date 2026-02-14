@@ -61,6 +61,7 @@ public partial class MainWindow : Window
             // Hide empty state, show content
             EmptyStatePanel.Visibility = Visibility.Collapsed;
             SummaryPanel.Visibility = Visibility.Visible;
+            ViewImagesButton.IsEnabled = true;
         }
         catch (MissingType1Exception ex)
         {
@@ -260,11 +261,25 @@ public partial class MainWindow : Window
         SummaryPanel.Visibility = Visibility.Collapsed;
         NoSelectionText.Visibility = Visibility.Visible;
         RecordHeaderPanel.Visibility = Visibility.Collapsed;
+        ViewImagesButton.IsEnabled = false;
     }
 
     private void ShowError(string title, string message)
     {
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+
+    private void ViewImagesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_currentTransaction == null)
+        {
+            ShowError("Error", "No NIST file loaded.");
+            return;
+        }
+
+        var imageViewer = new ImageViewerWindow(_currentTransaction);
+        imageViewer.Owner = this;
+        imageViewer.ShowDialog();
     }
 
     private void EditRecordButton_Click(object sender, RoutedEventArgs e)

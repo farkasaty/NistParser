@@ -17,6 +17,8 @@
         <Border Grid.Row="0" Background="#F3F3F3" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="10">
             <StackPanel Orientation="Horizontal">
                 <Button x:Name="OpenFileButton" Content="📂 Open NIST File" Click="OpenFileButton_Click" Width="180"/>
+                <Button x:Name="ViewImagesButton" Content="🖼️ View Images" Click="ViewImagesButton_Click"
+                       Width="160" IsEnabled="False"/>
                 <TextBlock x:Name="FilePathText" VerticalAlignment="Center" Margin="15,0,0,0"
                           Foreground="#666" FontStyle="Italic" Text="No file loaded"/>
             </StackPanel>

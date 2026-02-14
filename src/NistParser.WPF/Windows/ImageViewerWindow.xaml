@@ -1,0 +1,312 @@
+<Window x:Class="NistParser.WPF.Windows.ImageViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="🖼️ Biometric Image Viewer" Height="750" Width="1200"
+        WindowStartupLocation="CenterOwner"
+        Background="#F5F5F5">
+
+    <Window.Resources>
+        <!-- Thumbnail list item style -->
+        <Style x:Key="ImageListItemBorder" TargetType="Border">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="10"/>
+            <Setter Property="Margin" Value="5,3"/>
+        </Style>
+
+        <!-- Status badge style -->
+        <Style x:Key="StatusBadge" TargetType="Border">
+            <Setter Property="CornerRadius" Value="3"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+            <Setter Property="HorizontalAlignment" Value="Left"/>
+        </Style>
+
+        <!-- Info label -->
+        <Style x:Key="InfoLabel" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="#555"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Info value -->
+        <Style x:Key="InfoValue" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#222"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+        </Style>
+
+        <!-- Secondary button style (outline) -->
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#0078D4"/>
+            <Setter Property="BorderBrush" Value="#0078D4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E8F0FE"/>
+                </Trigger>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Opacity" Value="0.5"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header Bar -->
+        <Border Grid.Row="0" Background="#FAFAFA" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="15,10">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="🖼️" FontSize="20" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="Biometric Images" FontSize="18" FontWeight="Bold" Foreground="#0078D4"
+                              VerticalAlignment="Center"/>
+                    <TextBlock x:Name="ImageCountText" Text="" FontSize="14" Foreground="#888"
+                              VerticalAlignment="Center" Margin="12,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <ComboBox x:Name="FilterComboBox" Width="180" VerticalAlignment="Center" Margin="5"
+                             SelectionChanged="FilterComboBox_SelectionChanged">
+                        <ComboBoxItem Content="All Images" IsSelected="True"/>
+                        <ComboBoxItem Content="🖐️ Fingerprint"/>
+                        <ComboBoxItem Content="👤 Face"/>
+                        <ComboBoxItem Content="🔍 Latent"/>
+                        <ComboBoxItem Content="🤚 Palm Print"/>
+                        <ComboBoxItem Content="👁️ Iris"/>
+                        <ComboBoxItem Content="📝 Signature"/>
+                        <ComboBoxItem Content="🏷️ SMT (Scar/Mark/Tattoo)"/>
+                        <ComboBoxItem Content="📦 Other"/>
+                    </ComboBox>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Main Content -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Image List Panel -->
+            <Border Grid.Column="0" Background="White" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Images" FontSize="14" FontWeight="SemiBold"
+                              Foreground="#555" Margin="12,12,12,8"/>
+                    <ListBox x:Name="ImagesListBox" BorderThickness="0" Background="Transparent"
+                            SelectionChanged="ImagesListBox_SelectionChanged"
+                            HorizontalContentAlignment="Stretch">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource ImageListItemBorder}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- Icon -->
+                                        <TextBlock Grid.Column="0" Text="{Binding Icon}" FontSize="28"
+                                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
+
+                                        <!-- Info -->
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="{Binding Subtitle}" Foreground="#888" FontSize="11"
+                                                      Margin="0,2,0,0"/>
+                                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                                <!-- Web compatible badge -->
+                                                <Border Style="{StaticResource StatusBadge}"
+                                                       Background="{Binding StatusBackground}">
+                                                    <TextBlock Text="{Binding StatusText}" FontSize="10"
+                                                              Foreground="{Binding StatusForeground}"/>
+                                                </Border>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <!-- Splitter -->
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#E0E0E0"/>
+
+            <!-- Image Detail Panel -->
+            <Border Grid.Column="2" Background="White" Padding="20">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- No selection state -->
+                    <StackPanel x:Name="NoImageSelectedPanel" Grid.Row="0" Grid.RowSpan="2"
+                               HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="🖼️" FontSize="64" HorizontalAlignment="Center" Opacity="0.3"/>
+                        <TextBlock Text="Select an image from the list" FontSize="16"
+                                  Foreground="#999" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+
+                    <!-- Image Display Area -->
+                    <Grid x:Name="ImageDisplayPanel" Grid.Row="0" Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Image container with zoom support -->
+                        <Border Background="#F8F8F8" CornerRadius="6" Padding="10">
+                            <Grid>
+                                <!-- Actual image -->
+                                <Image x:Name="ImageDisplay" Stretch="Uniform"
+                                      RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                                <!-- WSQ warning overlay -->
+                                <Border x:Name="WsqWarningPanel" Visibility="Collapsed"
+                                       Background="#FFF3CD" CornerRadius="6" Padding="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       MaxWidth="450">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="⚠️" FontSize="48" HorizontalAlignment="Center"
+                                                  Margin="0,0,0,10"/>
+                                        <TextBlock Text="WSQ formátum — nem megjeleníthető"
+                                                  FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                                                  TextAlignment="Center"/>
+                                        <TextBlock Text="A WSQ (Wavelet Scalar Quantization) formátumhoz nincs cross-platform pure .NET dekóder. A nyers képadat exportálható."
+                                                  FontSize="12" Foreground="#856404" TextWrapping="Wrap"
+                                                  TextAlignment="Center" Margin="0,8,0,0"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Non-displayable format overlay -->
+                                <Border x:Name="NonDisplayablePanel" Visibility="Collapsed"
+                                       Background="#E8F0FE" CornerRadius="6" Padding="20"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       MaxWidth="450">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="ℹ️" FontSize="48" HorizontalAlignment="Center"
+                                                  Margin="0,0,0,10"/>
+                                        <TextBlock x:Name="NonDisplayableText"
+                                                  Text="Ez a képformátum nem jeleníthető meg közvetlenül"
+                                                  FontSize="14" TextWrapping="Wrap" TextAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </Grid>
+
+                    <!-- Metadata + Actions Panel -->
+                    <Border x:Name="MetadataPanel" Grid.Row="1" Visibility="Collapsed"
+                           Background="#FAFAFA" CornerRadius="6" Padding="15" Margin="0,10,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Metadata Grid -->
+                            <Grid Grid.Column="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Row 0 -->
+                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Type:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="1" x:Name="MetaImageType" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Size:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="0" Grid.Column="3" x:Name="MetaImageSize" Style="{StaticResource InfoValue}"/>
+
+                                <!-- Row 1 -->
+                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Compression:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="1" x:Name="MetaCompression" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Data Size:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="1" Grid.Column="3" x:Name="MetaDataSize" Style="{StaticResource InfoValue}"/>
+
+                                <!-- Row 2 -->
+                                <TextBlock Grid.Row="2" Grid.Column="0" Text="Position:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="1" x:Name="MetaPosition" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="2" Text="Resolution:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="2" Grid.Column="3" x:Name="MetaResolution" Style="{StaticResource InfoValue}"/>
+
+                                <!-- Row 3 -->
+                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Record:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="1" x:Name="MetaRecordType" Style="{StaticResource InfoValue}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="2" Text="IDC:" Style="{StaticResource InfoLabel}"/>
+                                <TextBlock Grid.Row="3" Grid.Column="3" x:Name="MetaIDC" Style="{StaticResource InfoValue}"/>
+                            </Grid>
+
+                            <!-- Action Buttons -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="15,0,0,0">
+                                <Button x:Name="SaveImageButton" Content="💾 Save Image"
+                                       Style="{StaticResource SecondaryButton}"
+                                       Click="SaveImageButton_Click"/>
+                                <Button x:Name="SaveRawButton" Content="📦 Save Raw Data"
+                                       Style="{StaticResource SecondaryButton}"
+                                       Click="SaveRawButton_Click"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Empty state when no images found -->
+        <Border x:Name="NoImagesPanel" Grid.Row="1" Visibility="Collapsed" Background="#F9F9F9">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="📭" FontSize="64" HorizontalAlignment="Center" Margin="0,0,0,15"/>
+                <TextBlock Text="No biometric images found" FontSize="20" FontWeight="SemiBold"
+                          HorizontalAlignment="Center" Foreground="#555"/>
+                <TextBlock Text="This NIST file does not contain any image records (Type-4, Type-10, Type-14, etc.)"
+                          FontSize="13" Foreground="#888" HorizontalAlignment="Center" Margin="0,8,0,0"
+                          TextWrapping="Wrap" MaxWidth="400" TextAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>
