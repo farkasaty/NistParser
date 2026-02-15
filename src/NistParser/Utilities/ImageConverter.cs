@@ -1,9 +1,13 @@
 using System;
 using System.IO;
+using System.Reflection;
+using CSJ2K;
+using CSJ2K.Util;
 using NistParser.Constants;
 using NistParser.Exceptions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace NistParser.Utilities
 {
@@ -14,7 +18,7 @@ namespace NistParser.Utilities
     /// Támogatott konverziók:
     /// - JPEG → változatlanul (natívan böngésző-kompatibilis)
     /// - PNG → változatlanul (natívan böngésző-kompatibilis)
-    /// - JPEG 2000 → PNG (ImageSharp könyvtárral)
+    /// - JPEG 2000 → PNG (CSJ2K dekóder + ImageSharp enkóder)
     /// - RAW → PNG (nyers pixel adat átformázása)
     ///
     /// NEM támogatott:
@@ -90,18 +94,68 @@ namespace NistParser.Utilities
 
         /// <summary>
         /// JPEG 2000 képadat konvertálása PNG formátumba.
-        /// Használja a SixLabors.ImageSharp könyvtárat, ami natívan támogatja a JPEG2000-t.
+        /// CSJ2K könyvtárat használ a dekódoláshoz, ImageSharp-ot a PNG enkódoláshoz.
         /// </summary>
         private static byte[] ConvertJpeg2000ToPng(byte[] jp2Data)
         {
             try
             {
-                using var inputStream = new MemoryStream(jp2Data);
-                using var image = Image.Load(inputStream);
-                using var outputStream = new MemoryStream();
+                var decoded = J2kImage.FromBytes(jp2Data);
+                int numComps = decoded.NumberOfComponents;
 
-                image.Save(outputStream, new PngEncoder());
-                return outputStream.ToArray();
+                // Width/Height internal property-k a CSJ2K 3.0-ban, reflection szükséges
+                var piType = typeof(PortableImage);
+                int width = (int)piType.GetProperty("Width", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(decoded)!;
+                int height = (int)piType.GetProperty("Height", BindingFlags.NonPublic | BindingFlags.Instance)!.GetValue(decoded)!;
+
+                if (numComps >= 3)
+                {
+                    // RGB vagy RGBA kép
+                    var compR = decoded.GetComponent(0);
+                    var compG = decoded.GetComponent(1);
+                    var compB = decoded.GetComponent(2);
+
+                    using var image = new Image<Rgb24>(width, height);
+                    for (int y = 0; y < height; y++)
+                    {
+                        int rowOffset = y * width;
+                        for (int x = 0; x < width; x++)
+                        {
+                            int idx = rowOffset + x;
+                            image[x, y] = new Rgb24(
+                                ClampToByte(compR[idx]),
+                                ClampToByte(compG[idx]),
+                                ClampToByte(compB[idx]));
+                        }
+                    }
+
+                    using var outputStream = new MemoryStream();
+                    image.Save(outputStream, new PngEncoder());
+                    return outputStream.ToArray();
+                }
+                else
+                {
+                    // Szürkeárnyalatos kép
+                    var compGray = decoded.GetComponent(0);
+
+                    using var image = new Image<L8>(width, height);
+                    for (int y = 0; y < height; y++)
+                    {
+                        int rowOffset = y * width;
+                        for (int x = 0; x < width; x++)
+                        {
+                            image[x, y] = new L8(ClampToByte(compGray[rowOffset + x]));
+                        }
+                    }
+
+                    using var outputStream = new MemoryStream();
+                    image.Save(outputStream, new PngEncoder());
+                    return outputStream.ToArray();
+                }
+            }
+            catch (ImageConversionNotSupportedException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -109,6 +163,13 @@ namespace NistParser.Utilities
                     "JPEG2000",
                     $"JPEG 2000 képadat konvertálása sikertelen: {ex.Message}");
             }
+        }
+
+        private static byte ClampToByte(int value)
+        {
+            if (value < 0) return 0;
+            if (value > 255) return 255;
+            return (byte)value;
         }
     }
 }
