@@ -129,9 +129,11 @@ Az új funkció lehetővé teszi:
 | 8 | Bal középső ujj | Left middle |
 | 9 | Bal gyűrűs ujj | Left ring |
 | 10 | Bal kisujj | Left little |
-| 11 | Jobb kéz 4 ujja | Right four fingers |
-| 12 | Bal kéz 4 ujja | Left four fingers |
-| 13 | Mindkét hüvelykujj | Both thumbs |
+| 11 | Sima jobb hüvelykujj | Plain right thumb |
+| 12 | Sima bal hüvelykujj | Plain left thumb |
+| 13 | Sima jobb kéz 4 ujja | Plain right four fingers |
+| 14 | Sima bal kéz 4 ujja | Plain left four fingers |
+| 15 | Sima bal és jobb hüvelykujj | Plain left and right thumbs |
 
 #### Arckép-specifikus metaadatok
 
@@ -156,12 +158,13 @@ Rekord felépítése:
 ┌────────────────────────────────────────────────────────────┐
 │ 14.001:12345<GS>  ← Rekord hossz                           │
 │ 14.002:00<GS>     ← IDC azonosító                          │
-│ 14.003:1<GS>      ← Lenyomat típus                         │
-│ 14.005:2<GS>      ← Ujjpozíció (2 = jobb mutató)           │
-│ 14.006:500<GS>    ← Felbontás (500 ppi)                    │
-│ 14.007:800<GS>    ← Szélesség                              │
-│ 14.008:750<GS>    ← Magasság                               │
-│ 14.009:WSQ<GS>    ← Tömörítés                              │
+│ 14.003:1<GS>      ← Lenyomat típus (IMP)                    │
+│ 14.005:20250101<GS> ← Ujjlenyomat rögzítés dátuma (FCD)    │
+│ 14.006:800<GS>    ← Szélesség (HLL)                        │
+│ 14.007:750<GS>    ← Magasság (VLL)                         │
+│ 14.008:1<GS>      ← Felbontás egysége (SLC, 1=ppi)        │
+│ 14.011:WSQ20<GS>  ← Tömörítés (CGA)                       │
+│ 14.013:2<GS>      ← Ujjpozíció (FGP, 2=jobb mutató)       │
 │ ...               ← További metaadatok                     │
 │ 14.999:[BINÁRIS KÉPADAT]<FS>  ← A tényleges kép!          │
 └────────────────────────────────────────────────────────────┘
@@ -629,21 +632,24 @@ namespace NistParser.Utilities
 
 ### 8.4 Mező-metaadat leképezés
 
-| Rekord típus | Mező | Célmező a BiometricImage-ben |
-|--------------|------|------------------------------|
-| Type-14 | 14.005 | FingerPosition, FingerPositionDescription |
-| Type-14 | 14.003 | ImpressionType, ImpressionTypeDescription |
-| Type-14 | 14.007 | Width |
-| Type-14 | 14.008 | Height |
-| Type-14 | 14.006 | Resolution |
-| Type-14 | 14.009 | Compression, CompressionDescription |
-| Type-14 | 14.999 | RawImageData |
-| Type-10 | 10.003 | FaceImageType, FaceImageTypeDescription |
-| Type-10 | 10.005 | PhotoDescription |
-| Type-10 | 10.006 | Width |
-| Type-10 | 10.007 | Height |
-| Type-10 | 10.011 | Compression, CompressionDescription |
-| Type-10 | 10.999 | RawImageData |
+| Rekord típus | Mező | Mnemonik | Célmező a BiometricImage-ben |
+|--------------|------|----------|------------------------------|
+| Type-14 | 14.003 | IMP | ImpressionType, ImpressionTypeDescription |
+| Type-14 | 14.004 | SRC | SourceAgency |
+| Type-14 | 14.005 | FCD | AdditionalMetadata["CaptureDate"] |
+| Type-14 | 14.006 | HLL | Width |
+| Type-14 | 14.007 | VLL | Height |
+| Type-14 | 14.008 | SLC | ResolutionUnit |
+| Type-14 | 14.009 | THPS | Resolution |
+| Type-14 | 14.011 | CGA | Compression, CompressionDescription |
+| Type-14 | 14.013 | FGP | FingerPosition, FingerPositionDescription |
+| Type-14 | 14.999 | DATA | RawImageData |
+| Type-10 | 10.003 | IMT | FaceImageType, FaceImageTypeDescription |
+| Type-10 | 10.004 | SRC | SourceAgency |
+| Type-10 | 10.006 | HLL | Width |
+| Type-10 | 10.007 | VLL | Height |
+| Type-10 | 10.011 | CGA | Compression, CompressionDescription |
+| Type-10 | 10.999 | DATA | RawImageData |
 
 ---
 

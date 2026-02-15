@@ -80,28 +80,35 @@ namespace NistParser.Constants
                 "13.012" => "BPX - Bits Per Pixel",
                 "13.999" => "DATA - Image Data",
 
-                // Type-14 Fields (Fingerprint)
+                // Type-14 Fields (Fingerprint) - per ANSI/NIST-ITL 1-2011 Update:2015
                 "14.001" => "LEN - Logical Record Length",
                 "14.002" => "IDC - Information Designation Character",
                 "14.003" => "IMP - Impression Type",
                 "14.004" => "SRC - Source Agency",
-                "14.005" => "FGP - Finger Position",
-                "14.006" => "ISR - Image Scanning Resolution",
-                "14.007" => "HLL - Horizontal Line Length",
-                "14.008" => "VLL - Vertical Line Length",
-                "14.009" => "CA - Compression Algorithm",
-                "14.010" => "BPX - Bits Per Pixel",
-                "14.011" => "FGP2 - Finger Position(s)",
-                "14.012" => "FQM - Finger Quality Metric",
-                "14.013" => "ASEG - Alternate Finger Segment Position(s)",
-                "14.014" => "NIST2 - NIST Quality Metric",
-                "14.015" => "SQS - Segmentation Quality Score",
-                "14.020" => "COM - Comment",
-                "14.021" => "SEG - Finger Segment Position(s)",
-                "14.022" => "NQM - NIST Quality Metric",
-                "14.023" => "SQM - Segmentation Quality Metric",
-                "14.024" => "FQM2 - Finger Quality Metric (newer version)",
+                "14.005" => "FCD - Fingerprint Capture Date",
+                "14.006" => "HLL - Horizontal Line Length",
+                "14.007" => "VLL - Vertical Line Length",
+                "14.008" => "SLC - Scale Units",
+                "14.009" => "THPS - Transmitted Horizontal Pixel Scale",
+                "14.010" => "TVPS - Transmitted Vertical Pixel Scale",
+                "14.011" => "CGA - Compression Algorithm",
+                "14.012" => "BPX - Bits Per Pixel",
+                "14.013" => "FGP - Friction Ridge Generalized Position",
+                "14.014" => "PPD - Print Position Descriptors",
+                "14.015" => "PPC - Print Position Coordinates",
+                "14.016" => "SHPS - Scanned Horizontal Pixel Scale",
+                "14.017" => "SVPS - Scanned Vertical Pixel Scale",
+                "14.018" => "AMP - Amputated or Bandaged",
+                "14.019" => "COM - Comment",
+                "14.020" => "SEG - Finger Segment Position(s)",
+                "14.021" => "NQM - NIST Quality Metric",
+                "14.022" => "SQM - Segmentation Quality Metric",
+                "14.024" => "FQM - Finger Quality Metric",
+                "14.025" => "ASEG - Alternate Finger Segment Position(s)",
+                "14.026" => "SCF - Simultaneous Capture",
+                "14.027" => "SIF - Stitched Image Flag",
                 "14.030" => "DMM - Device Monitoring Mode",
+                "14.031" => "FAP - Subject Acquisition Profile",
                 "14.999" => "DATA - Image Data",
 
                 // Type-17 Fields (Iris)
@@ -179,8 +186,8 @@ namespace NistParser.Constants
                     _ => value
                 },
 
-                // Finger positions (FGP - 14.005)
-                "14.005" => value switch
+                // Finger positions (FGP - 14.013, 13.013)
+                "14.013" or "13.013" => value switch
                 {
                     "0" => "Unknown (0)",
                     "1" => "Right thumb (1)",
@@ -193,27 +200,30 @@ namespace NistParser.Constants
                     "8" => "Left middle (8)",
                     "9" => "Left ring (9)",
                     "10" => "Left little (10)",
-                    "11" => "Right four fingers (11)",
-                    "12" => "Left four fingers (12)",
-                    "13" => "Both thumbs (13)",
+                    "11" => "Plain right thumb (11)",
+                    "12" => "Plain left thumb (12)",
+                    "13" => "Plain right four fingers (13)",
+                    "14" => "Plain left four fingers (14)",
+                    "15" => "Plain left and right thumbs (15)",
                     _ => value
                 },
 
-                // Compression algorithms (CA - 14.009, CGA - 10.011/13.011)
-                "14.009" or "10.011" or "13.011" => value switch
+                // Compression algorithms (CGA - X.011)
+                "14.011" or "10.011" or "13.011" or "15.011" => value switch
                 {
                     "NONE" => "Uncompressed (NONE)",
+                    "WSQ20" => "WSQ v2.0 - Wavelet Scalar Quantization",
                     "WSQ" => "WSQ - Wavelet Scalar Quantization",
-                    "JPEGB" => "JPEG Baseline",
+                    "JPEGB" => "JPEG Baseline (Lossy)",
                     "JPEGL" => "JPEG Lossless",
-                    "JP2" => "JPEG 2000",
+                    "JP2" => "JPEG 2000 (Lossy)",
                     "JP2L" => "JPEG 2000 Lossless",
                     "PNG" => "PNG - Portable Network Graphics",
                     _ => value
                 },
 
                 // Scale units (SLC - X.008)
-                "10.008" or "13.008" => value switch
+                "10.008" or "13.008" or "14.008" or "15.008" => value switch
                 {
                     "0" => "None (0)",
                     "1" => "Pixels per inch (1)",

@@ -414,21 +414,21 @@ namespace NistParser
                     AddField(record, "14.004", src.Value);
                 }
 
-                // Field 14.005 - Finger Position (FGP)
+                // Field 14.013 - Friction Ridge Generalized Position (FGP)
                 XElement? fgp = fingerprintImage.Element(biom + "FingerPositionCode");
                 if (fgp != null)
                 {
-                    AddField(record, "14.005", fgp.Value);
+                    AddField(record, "14.013", fgp.Value);
                 }
 
-                // Parse image capture details
+                // Parse image capture details (HLL, VLL, SLC, THPS)
                 ParseImageCaptureDetails(fingerprintImage, record, 14);
 
-                // Field 14.009 - Compression Algorithm (CA)
+                // Field 14.011 - Compression Algorithm (CGA)
                 XElement? ca = fingerprintImage.Element(biom + "ImageCompressionAlgorithmCode");
                 if (ca != null)
                 {
-                    AddField(record, "14.009", ca.Value);
+                    AddField(record, "14.011", ca.Value);
                 }
             }
 
@@ -518,29 +518,35 @@ namespace NistParser
             if (captureDetail == null)
             return;
 
-            // Field X.006 - Image Scanning Resolution (ISR)
-            XElement? captureResolution = captureDetail.Element(biom + "CaptureResolution");
-            if (captureResolution != null)
-            {
-                XElement? resValue = captureResolution.Element(biom + "ResolutionValue");
-                if (resValue != null)
-                {
-                    AddField(record, $"{recordType}.006", resValue.Value);
-                }
-            }
-
-            // Field X.007 - Horizontal Line Length (HLL)
+            // Field X.006 - Horizontal Line Length (HLL)
             XElement? hll = captureDetail.Element(biom + "CaptureHorizontalLineLengthValue");
             if (hll != null)
             {
-                AddField(record, $"{recordType}.007", hll.Value);
+                AddField(record, $"{recordType}.006", hll.Value);
             }
 
-            // Field X.008 - Vertical Line Length (VLL)
+            // Field X.007 - Vertical Line Length (VLL)
             XElement? vll = captureDetail.Element(biom + "CaptureVerticalLineLengthValue");
             if (vll != null)
             {
-                AddField(record, $"{recordType}.008", vll.Value);
+                AddField(record, $"{recordType}.007", vll.Value);
+            }
+
+            // Field X.008 - Scale Units (SLC) and X.009 - Resolution (THPS)
+            XElement? captureResolution = captureDetail.Element(biom + "CaptureResolution");
+            if (captureResolution != null)
+            {
+                XElement? resUnitCode = captureResolution.Element(biom + "ResolutionUnitCode");
+                if (resUnitCode != null)
+                {
+                    AddField(record, $"{recordType}.008", resUnitCode.Value);
+                }
+
+                XElement? resValue = captureResolution.Element(biom + "ResolutionValue");
+                if (resValue != null)
+                {
+                    AddField(record, $"{recordType}.009", resValue.Value);
+                }
             }
         }
 

@@ -286,30 +286,26 @@ namespace NistParser.Utilities
             // Source Agency (X.004)
             image.SourceAgency = record.GetFieldValue($"{typeNumber}.004");
 
-            // Horizontal Line Length / Width (X.006 vagy X.010)
-            var hll = record.GetFieldValue($"{typeNumber}.006")
-                   ?? record.GetFieldValue($"{typeNumber}.010");
+            // Horizontal Line Length / Width (X.006)
+            var hll = record.GetFieldValue($"{typeNumber}.006");
             if (int.TryParse(hll, out int width))
                 image.Width = width;
 
-            // Vertical Line Length / Height (X.007 vagy X.011)
-            var vll = record.GetFieldValue($"{typeNumber}.007")
-                   ?? record.GetFieldValue($"{typeNumber}.011");
+            // Vertical Line Length / Height (X.007)
+            var vll = record.GetFieldValue($"{typeNumber}.007");
             if (int.TryParse(vll, out int height))
                 image.Height = height;
 
-            // Scale Units (X.008 vagy X.012)
-            image.ResolutionUnit = record.GetFieldValue($"{typeNumber}.008")
-                                ?? record.GetFieldValue($"{typeNumber}.012");
+            // Scale Units (X.008)
+            image.ResolutionUnit = record.GetFieldValue($"{typeNumber}.008");
 
-            // Scanning Resolution (X.009)
+            // Scanning Resolution / THPS (X.009)
             var sres = record.GetFieldValue($"{typeNumber}.009");
             if (decimal.TryParse(sres, out decimal resolution))
                 image.Resolution = resolution;
 
-            // Compression Algorithm (X.011 Standard, X.013 Type-14)
-            var compressionCode = record.GetFieldValue($"{typeNumber}.011")
-                               ?? record.GetFieldValue($"{typeNumber}.013");
+            // Compression Algorithm / CGA (X.011)
+            var compressionCode = record.GetFieldValue($"{typeNumber}.011");
             image.CompressionCode = compressionCode;
             if (compressionCode != null)
             {
@@ -340,8 +336,8 @@ namespace NistParser.Utilities
                 "WSQ" or "WSQ20" => CompressionAlgorithm.WSQ,
                 "JPEGB" or "JPEG" or "JPG" => CompressionAlgorithm.JPEG_Lossy,
                 "JPEGL" => CompressionAlgorithm.JPEG_Lossless,
-                "JP2" or "JP2L" => CompressionAlgorithm.JPEG2000_Lossy,
-                "JP2LOSS" or "JPEG2000L" => CompressionAlgorithm.JPEG2000_Lossless,
+                "JP2" => CompressionAlgorithm.JPEG2000_Lossy,
+                "JP2L" => CompressionAlgorithm.JPEG2000_Lossless,
                 "PNG" => CompressionAlgorithm.PNG,
                 "NONE" or "RAW" => CompressionAlgorithm.Uncompressed,
                 _ => null
@@ -350,47 +346,55 @@ namespace NistParser.Utilities
 
         /// <summary>
         /// Type-14 (Fingerprint) specifikus metaadatok.
+        /// Per ANSI/NIST-ITL 1-2011 Update:2015 specification:
+        ///   14.003=IMP, 14.004=SRC, 14.005=FCD, 14.006=HLL, 14.007=VLL,
+        ///   14.008=SLC, 14.009=THPS, 14.010=TVPS, 14.011=CGA, 14.012=BPX, 14.013=FGP
         /// </summary>
         private static void ExtractType14Metadata(NistRecord record, BiometricImage image)
         {
-            // Field 14.003 - Impression Type
+            // Field 14.003 - Impression Type (IMP)
             image.ImpressionType = record.GetFieldValue("14.003");
 
-            // Field 14.004 - Source Agency (may override common)
+            // Field 14.004 - Source Agency (SRC) - may override common
             var src = record.GetFieldValue("14.004");
             if (!string.IsNullOrEmpty(src))
                 image.SourceAgency = src;
 
-            // Field 14.005 - Finger Position
-            image.FingerPosition = record.GetFieldValue("14.005");
+            // Field 14.005 - Fingerprint Capture Date (FCD)
+            var captureDate = record.GetFieldValue("14.005");
+            if (!string.IsNullOrEmpty(captureDate))
+                image.AdditionalMetadata["CaptureDate"] = captureDate!;
 
-            // Field 14.010 - HLL (Width) - override common
-            var hll = record.GetFieldValue("14.010");
+            // Field 14.006 - Horizontal Line Length (HLL) - Width
+            var hll = record.GetFieldValue("14.006");
             if (int.TryParse(hll, out int width))
                 image.Width = width;
 
-            // Field 14.011 - VLL (Height) - override common
-            var vll = record.GetFieldValue("14.011");
+            // Field 14.007 - Vertical Line Length (VLL) - Height
+            var vll = record.GetFieldValue("14.007");
             if (int.TryParse(vll, out int height))
                 image.Height = height;
 
-            // Field 14.012 - Scale Units
-            var scaleUnits = record.GetFieldValue("14.012");
+            // Field 14.008 - Scale Units (SLC)
+            var scaleUnits = record.GetFieldValue("14.008");
             if (!string.IsNullOrEmpty(scaleUnits))
                 image.ResolutionUnit = scaleUnits;
 
-            // Field 14.013 - Compression Algorithm
-            var compression = record.GetFieldValue("14.013");
+            // Field 14.009 - Transmitted Horizontal Pixel Scale (THPS) - Resolution
+            var sres = record.GetFieldValue("14.009");
+            if (decimal.TryParse(sres, out decimal resolution))
+                image.Resolution = resolution;
+
+            // Field 14.011 - Compression Algorithm (CGA)
+            var compression = record.GetFieldValue("14.011");
             if (!string.IsNullOrEmpty(compression))
             {
                 image.CompressionCode = compression;
                 image.Compression = ParseCompressionCode(compression);
             }
 
-            // Field 14.009 - Scanning Resolution
-            var sres = record.GetFieldValue("14.009");
-            if (decimal.TryParse(sres, out decimal resolution))
-                image.Resolution = resolution;
+            // Field 14.013 - Friction Ridge Generalized Position (FGP)
+            image.FingerPosition = record.GetFieldValue("14.013");
         }
 
         /// <summary>

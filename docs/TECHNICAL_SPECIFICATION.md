@@ -275,11 +275,11 @@ This implementation provides human-readable descriptions for 80+ common fields:
 
 **Example:**
 ```
-Field Number: 14.005
+Field Number: 14.013
 Raw Value: "1"
-Description: "FGP - Finger Position"
+Description: "FGP - Friction Ridge Generalized Position"
 Mnemonic: "FGP"
-Long Description: "Finger Position"
+Long Description: "Friction Ridge Generalized Position"
 Value Interpretation: "Right thumb (1)"
 ```
 
@@ -287,7 +287,7 @@ Value Interpretation: "Right thumb (1)"
 - Version numbers (0502 → "Version 05.02")
 - Transaction types (CRM → "Criminal (CRM)")
 - Impression types (0 → "Live-scan plain (0)")
-- Finger positions (1-13 with names)
+- Finger positions (0-15+ with names, per ANSI/NIST-ITL Table 9)
 - Compression algorithms (WSQ → "WSQ - Wavelet Scalar Quantization")
 - Scale units (1 → "Pixels per inch (1)")
 - Dates (20250717 → "2025-07-17")
@@ -447,11 +447,17 @@ X.999:binary_image_data<GS or FS>
 ```
 14.001:12345<GS>             (Record length)
 14.002:00<GS>                (IDC)
-14.003:500<GS>               (Image resolution)
-14.004:1<GS>                 (Impression type)
-14.005:600<GS>               (Horizontal line length)
-14.006:800<GS>               (Vertical line length)
-14.007:7<GS>                 (Compression: JPEG 2000)
+14.003:1<GS>                 (Impression type - IMP)
+14.004:AGENCY01<GS>          (Source agency - SRC)
+14.005:20250101<GS>          (Fingerprint capture date - FCD)
+14.006:600<GS>               (Horizontal line length - HLL)
+14.007:800<GS>               (Vertical line length - VLL)
+14.008:1<GS>                 (Scale units - SLC, 1=ppi)
+14.009:19.69<GS>             (Transmitted horiz. pixel scale - THPS)
+14.010:19.69<GS>             (Transmitted vert. pixel scale - TVPS)
+14.011:WSQ20<GS>             (Compression algorithm - CGA)
+14.012:8<GS>                 (Bits per pixel - BPX)
+14.013:1<GS>                 (Finger position - FGP, 1=right thumb)
 14.999:[binary image data]<FS>
 ```
 
@@ -461,15 +467,19 @@ X.999:binary_image_data<GS or FS>
 
 ### 10.1 Supported Compression Algorithms
 
-| Algorithm | Code | Usage |
-|-----------|------|-------|
-| Uncompressed | 0 | No compression |
-| WSQ v2.0 | 1 | Fingerprints (Type-14) |
-| JPEG (Lossy) | 2 | Facial images (Type-10) |
-| JPEG (Lossless) | 3 | Facial images (Type-10) |
-| JPEG 2000 (Lossy) | 4 | Fingerprints, faces (Type-10, Type-14) |
-| JPEG 2000 (Lossless) | 5 | Fingerprints, faces (Type-10, Type-14) |
-| PNG | 6 | Lossless images (Type-10) |
+The standard uses two code systems depending on record type:
+- **Numeric codes** (0-6): Used in Type-4 pure binary records
+- **Text labels**: Used in tagged/mixed records (Type-10, Type-13, Type-14, Type-15, etc.)
+
+| Algorithm | Numeric Code | Text Label | Usage |
+|-----------|-------------|------------|-------|
+| Uncompressed | 0 | NONE | No compression |
+| WSQ v2.0 | 1 | WSQ20 | Fingerprints (Type-14) |
+| JPEG (Lossy) | 2 | JPEGB | Facial images (Type-10) |
+| JPEG (Lossless) | 3 | JPEGL | Facial images (Type-10) |
+| JPEG 2000 (Lossy) | 4 | JP2 | Fingerprints, faces (Type-10, Type-14) |
+| JPEG 2000 (Lossless) | 5 | JP2L | Fingerprints, faces (Type-10, Type-14) |
+| PNG | 6 | PNG | Lossless images (Type-10) |
 
 ### 10.2 Compression by Record Type
 

@@ -290,13 +290,14 @@ namespace NistParser.Writing
             // Add common fields
             AddFieldAsElement(element, record, "14.003", itl + "FingerprintImage", biom + "ImpressionTypeCode");
             AddFieldAsElement(element, record, "14.004", itl + "FingerprintImage", biom + "SourceAgencyCode");
-            AddFieldAsElement(element, record, "14.005", itl + "FingerprintImage", biom + "FingerPositionCode");
+            AddFieldAsElement(element, record, "14.013", itl + "FingerprintImage", biom + "FingerPositionCode");
 
-            // Add image properties
-            AddFieldAsElement(element, record, "14.006", itl + "FingerprintImage", biom + "ImageScanningResolution");
-            AddFieldAsElement(element, record, "14.007", itl + "FingerprintImage", biom + "ImageHorizontalLineLength");
-            AddFieldAsElement(element, record, "14.008", itl + "FingerprintImage", biom + "ImageVerticalLineLength");
-            AddFieldAsElement(element, record, "14.009", itl + "FingerprintImage", biom + "ImageCompressionAlgorithmCode");
+            // Add image properties (per ANSI/NIST-ITL 1-2011 Update:2015)
+            AddFieldAsElement(element, record, "14.006", itl + "FingerprintImage", biom + "ImageHorizontalLineLength");
+            AddFieldAsElement(element, record, "14.007", itl + "FingerprintImage", biom + "ImageVerticalLineLength");
+            AddFieldAsElement(element, record, "14.008", itl + "FingerprintImage", biom + "ImageScaleUnitsCode");
+            AddFieldAsElement(element, record, "14.009", itl + "FingerprintImage", biom + "ImageHorizontalPixelScale");
+            AddFieldAsElement(element, record, "14.011", itl + "FingerprintImage", biom + "ImageCompressionAlgorithmCode");
 
             // Add binary data if present
             var dataField = record.GetField("14.999");

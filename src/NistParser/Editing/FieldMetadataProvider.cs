@@ -129,12 +129,12 @@ namespace NistParser.Editing
             _metadata["1.010"] = FieldMetadata.Text("1.010", "Transaction Control Reference", isRequired: false, maxLength: 50,
             helpText: "Reference to a related transaction");
 
-            // 1.011 - NSR (Optional, numeric)
-            _metadata["1.011"] = FieldMetadata.Numeric("1.011", "Native Scanning Resolution", isRequired: false,
+            // 1.011 - NSR (Mandatory, numeric)
+            _metadata["1.011"] = FieldMetadata.Numeric("1.011", "Native Scanning Resolution", isRequired: true,
             helpText: "Resolution at which biometric data was originally captured (in ppi)");
 
-            // 1.012 - NTR (Optional, numeric)
-            _metadata["1.012"] = FieldMetadata.Numeric("1.012", "Nominal Transmitting Resolution", isRequired: false,
+            // 1.012 - NTR (Mandatory, numeric)
+            _metadata["1.012"] = FieldMetadata.Numeric("1.012", "Nominal Transmitting Resolution", isRequired: true,
             helpText: "Resolution of the transmitted biometric data (in ppi)");
 
             // 1.013 - DOM (Optional)

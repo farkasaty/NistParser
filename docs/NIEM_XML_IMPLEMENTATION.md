@@ -179,11 +179,15 @@ XElement transaction = type1.Element(biom + "Transaction");
 | 14.002 | IDC | `14.002:` | `biom:ImageReferenceIdentification/nc:IdentificationID` |
 | 14.003 | IMP | `14.003:` | `biom:FingerprintImage/biom:FingerprintImageImpressionCaptureCategoryCode` |
 | 14.004 | SRC | `14.004:` | `biom:FingerprintImage/biom:FingerprintImageSourceCode` |
-| 14.005 | FGP | `14.005:` | `biom:FingerprintImage/biom:FingerPositionCode` |
-| 14.006 | ISR | `14.006:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureResolution` |
-| 14.007 | HLL | `14.007:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureHorizontalLineLengthValue` |
-| 14.008 | VLL | `14.008:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureVerticalLineLengthValue` |
-| 14.009 | CA | `14.009:` | `biom:FingerprintImage/biom:ImageCompressionAlgorithmCode` |
+| 14.005 | FCD | `14.005:` | `biom:FingerprintImage/biom:FingerprintCaptureDateValue` |
+| 14.006 | HLL | `14.006:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureHorizontalLineLengthValue` |
+| 14.007 | VLL | `14.007:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureVerticalLineLengthValue` |
+| 14.008 | SLC | `14.008:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureResolution/biom:ResolutionUnitCode` |
+| 14.009 | THPS | `14.009:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureResolution/biom:ResolutionValue` |
+| 14.010 | TVPS | `14.010:` | `biom:FingerprintImage/biom:ImageCaptureDetail/biom:CaptureVerticalResolution/biom:ResolutionValue` |
+| 14.011 | CGA | `14.011:` | `biom:FingerprintImage/biom:ImageCompressionAlgorithmCode` |
+| 14.012 | BPX | `14.012:` | `biom:FingerprintImage/biom:ImageBitsPerPixelQuantity` |
+| 14.013 | FGP | `14.013:` | `biom:FingerprintImage/biom:FingerPositionCode` |
 | 14.999 | DATA | Binary | `biom:FingerImpressionImage/nc:BinaryBase64Object` (Base64) |
 
 ---
