@@ -84,14 +84,14 @@ public class RecordEditorViewModel : INotifyPropertyChanged
     {
         get
         {
-            foreach (var field in EditableFields)
+            foreach (var f in EditableFields)
             {
-                if (_originalValues.TryGetValue(field.FieldNumber, out var originalValue))
+                if (_originalValues.TryGetValue(f.FieldNumber, out var originalValue))
                 {
-                    if (field.FieldValue != originalValue)
+                    if (f.FieldValue != originalValue)
                         return true;
                 }
-                else if (!string.IsNullOrEmpty(field.FieldValue))
+                else if (!string.IsNullOrEmpty(f.FieldValue))
                 {
                     return true;
                 }
